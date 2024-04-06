@@ -7,6 +7,7 @@ repository = "https://github.com/kindynosmx/evm-indexer"
 description = "Scalable SQL indexer for EVM compatible blockchains"
 
 [dependencies]
+actix-web = "4.0"
 array-bytes = "6"
 clap = { version = "4", features = ["derive"] }
 clickhouse = "0.11"

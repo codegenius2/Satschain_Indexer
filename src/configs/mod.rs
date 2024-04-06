@@ -92,7 +92,7 @@ impl Config {
         //     url.password().expect("no password provided for database");
 
         let username = "default";
-        let password = "Youareidiot!123!@#";
+        let password = "myclickhousepassword";
         let db_host =
             url.host().expect("no host provided for database").to_string();
 
