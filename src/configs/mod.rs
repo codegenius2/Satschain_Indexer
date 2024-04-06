@@ -86,11 +86,13 @@ impl Config {
 
         let url = Url::parse(&args.database).expect("unable to parse database url expected: scheme://username:password@host/database");
 
-        let username = url.username();
+        // let username = url.username();
 
-        let password =
-            url.password().expect("no password provided for database");
+        // let password =
+        //     url.password().expect("no password provided for database");
 
+        let username = "default";
+        let password = "Youareidiot!123!@#";
         let db_host =
             url.host().expect("no host provided for database").to_string();
 

@@ -90,6 +90,7 @@ impl Database {
             .pool_idle_timeout(POOL_IDLE_TIMEOUT)
             .build::<_, hyper::Body>(https);
 
+        info!("db host {}", db_host.clone());
         let db = Client::with_http_client(client)
             .with_url(db_host)
             .with_user(db_username)

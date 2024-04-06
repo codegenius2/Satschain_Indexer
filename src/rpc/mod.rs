@@ -524,9 +524,9 @@ impl Rpc {
         info!("Starting new blocks listener.");
 
         let client = self.get_ws_client().await;
-
+        info!("Catched ws client");
         let client_id = client.request("eth_chainId", rpc_params![]).await;
-
+        info!("Passed here");
         match client_id {
             Ok(value) => {
                 let chain_id: U256 = match serde_json::from_value(value) {
@@ -627,10 +627,10 @@ impl Rpc {
 
     async fn get_ws_client(&self) -> WsClient {
         let url = self.ws_url.clone().unwrap();
-
+        info!("url is {}", url);
         let client_wss: WsClient =
             WsClientBuilder::default().build(url).await.unwrap();
-
+        info!("get client wss");
         client_wss
     }
 
