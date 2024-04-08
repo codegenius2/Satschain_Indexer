@@ -1538,36 +1538,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 
 [[package]]
-name = "evm-indexer"
-version = "1.4.0"
-dependencies = [
- "actix-web",
- "array-bytes",
- "clap",
- "clickhouse",
- "dotenv",
- "ethers",
- "futures",
- "hex",
- "hyper",
- "hyper-tls",
- "jsonrpsee",
- "jsonrpsee-http-client",
- "jsonrpsee-ws-client",
- "log",
- "primitive-types",
- "rand",
- "serde",
- "serde_bytes",
- "serde_json",
- "serde_repr",
- "serde_with",
- "simple_logger",
- "tokio",
- "url",
-]
-
-[[package]]
 name = "eyre"
 version = "0.6.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3362,6 +3332,36 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
 dependencies = [
  "winapi-util",
+]
+
+[[package]]
+name = "satschain-indexer"
+version = "1.4.0"
+dependencies = [
+ "actix-web",
+ "array-bytes",
+ "clap",
+ "clickhouse",
+ "dotenv",
+ "ethers",
+ "futures",
+ "hex",
+ "hyper",
+ "hyper-tls",
+ "jsonrpsee",
+ "jsonrpsee-http-client",
+ "jsonrpsee-ws-client",
+ "log",
+ "primitive-types",
+ "rand",
+ "serde",
+ "serde_bytes",
+ "serde_json",
+ "serde_repr",
+ "serde_with",
+ "simple_logger",
+ "tokio",
+ "url",
 ]
 
 [[package]]

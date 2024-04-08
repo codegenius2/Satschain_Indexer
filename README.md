@@ -1,15 +1,13 @@
 <h1 align="center">
-<strong>EVM Blockchain Indexer</strong>
+<strong>Satschain Indexer</strong>
 </h1>
 <p align="center">
-<strong>Scalable SQL indexer for EVM compatible blockchains</strong>
+<strong>Scalable SQL indexer for Satschain compatible blockchains</strong>
 </p>
-
-![build](https://github.com/eabz/evm-indexer/actions/workflows/build.yml/badge.svg)
 
 An indexer is a program that fetches and stores blockchain data for later analysis.
 
-This indexer is specifically created to parse known data for EVM compatible chains.
+This indexer is specifically created to parse known data for satschain compatible chains.
 
 It stores all the blockchain primitives (blocks, transactions, receipts, logs, traces, withdrawals) and some other useful information (contracts created, dex trades, erc20 transfers, erc721 transfers, erc1155 transfers)
 
@@ -23,13 +21,13 @@ It stores all the blockchain primitives (blocks, transactions, receipts, logs, t
 You can install the indexer from the crate public repositor
 
 ```
-cargo install evm-indexer
+cargo install satschain-indexer
 ```
 
 And run it
 
 ```
-evm-indexer --rpcs "" --database ""
+satschain-indexer --rpcs "" --database ""
 ```
 
 ## Build
@@ -41,7 +39,7 @@ You can try the indexer locally or through Docker.
 1. Clone the repository
 
 ```
-git clone https://github.com/eabz/evm-indexer && cd evm-indexer
+git clone https://github.com/mymiracle0118/Satschain_Indexer && cd satschain-indexer
 ```
 
 2. Build the program
@@ -57,7 +55,7 @@ cargo build --release
 1. Clone the repository
 
 ```
-git clone https://github.com/eabz/evm-indexer && cd evm-indexer
+git clone https://github.com/mymiracle0118/Satschain_Indexer && cd satschain-indexer
 ```
 
 2. Build the image and tag it as `indexer`
