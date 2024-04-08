@@ -118,6 +118,7 @@ impl Database {
 
     pub async fn store_data(&self, data: &BlockFetchedData) {
         let mut stores = vec![];
+        info!("store data function");
 
         if !data.contracts.is_empty() {
             let work = tokio::spawn({
