@@ -131,7 +131,7 @@ impl Database {
                     .await
                 }
             });
-
+            info!("Added data to contracts");
             stores.push(work);
         }
 
@@ -145,6 +145,7 @@ impl Database {
                 }
             });
 
+            info!("Added data to logs");
             stores.push(work);
         }
 
@@ -161,6 +162,7 @@ impl Database {
                 }
             });
 
+            info!("Added data to traces");
             stores.push(work);
         }
 
@@ -194,6 +196,7 @@ impl Database {
                 }
             });
 
+            info!("Added data to withdrawals");
             stores.push(work);
         }
 
@@ -211,6 +214,7 @@ impl Database {
                 }
             });
 
+            info!("Added data to erc20_transfers");
             stores.push(work);
         }
 
@@ -228,6 +232,7 @@ impl Database {
                 }
             });
 
+            info!("Added data to erc721_transfers");
             stores.push(work);
         }
 
@@ -245,6 +250,7 @@ impl Database {
                 }
             });
 
+            info!("Added data to erc1155_transfers");
             stores.push(work);
         }
 
@@ -262,6 +268,7 @@ impl Database {
                 }
             });
 
+            info!("Added data to dex_trades");
             stores.push(work);
         }
 

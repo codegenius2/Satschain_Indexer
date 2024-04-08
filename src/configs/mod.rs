@@ -1,5 +1,8 @@
 use crate::chains::{get_chain, Chain};
 use clap::Parser;
+use dotenv::dotenv;
+use jsonrpsee::tracing::info;
+use std::env;
 use url::Url;
 
 #[derive(Parser, Debug)]
@@ -86,13 +89,15 @@ impl Config {
 
         let url = Url::parse(&args.database).expect("unable to parse database url expected: scheme://username:password@host/database");
 
-        // let username = url.username();
+        dotenv().ok();
+        let username =
+            env::var("DB_USER_NAME").expect("DB_USER_NAME must be set");
+        let password = env::var("DB_USER_PASSWORD")
+            .expect("DB_USER_PASSWORD must be set");
+        let port = env::var("PORT").unwrap_or_else(|_| "8123".to_string());
+        let dbname = env::var("DB_NAME")
+            .unwrap_or_else(|_| "satschain".to_string());
 
-        // let password =
-        //     url.password().expect("no password provided for database");
-
-        let username = "default";
-        let password = "myclickhousepassword";
         let db_host =
             url.host().expect("no host provided for database").to_string();
 
@@ -105,7 +110,13 @@ impl Config {
         Self {
             batch_size: args.batch_size,
             chain,
-            db_host: format!("{}://{}", url.scheme(), db_host),
+            db_host: format!(
+                "{}://{}:{}/{}",
+                url.scheme(),
+                db_host,
+                port,
+                dbname
+            ),
             db_name: db_name.to_string(),
             db_password: password.to_string(),
             db_username: username.to_string(),
