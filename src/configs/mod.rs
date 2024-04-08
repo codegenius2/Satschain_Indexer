@@ -7,8 +7,8 @@ use url::Url;
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "EVM Indexer",
-    about = "Scalable SQL indexer for EVM compatible blockchains."
+    name = "Satschain Indexer",
+    about = "Scalable SQL indexer for Satschain compatible blockchains."
 )]
 pub struct IndexerArgs {
     #[arg(
