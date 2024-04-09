@@ -92,6 +92,17 @@ impl From<DatabaseBlock> for BlockResponse {
     }
 }
 
+#[derive(Deserialize, Serialize)]
+pub struct NextPageParams {
+    block_number: u32,
+    items_count: u32,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct BlockResponseData {
+    items: Vec<BlockResponse>,
+    next_page_params: NextPageParams,
+}
 #[derive(Deserialize)]
 pub struct GetBlockQuery {}
 
@@ -252,8 +263,13 @@ pub async fn handle_getblocks(
     let blocks: Vec<BlockResponse> =
         database_blocks.into_iter().map(BlockResponse::from).collect();
 
+    let next_page =
+        NextPageParams { block_number: 19999, items_count: 50 };
+
+    let rlt =
+        BlockResponseData { items: blocks, next_page_params: next_page };
     // println!("{:?}", blocks);
-    HttpResponse::Ok().content_type("application/json").json(blocks)
+    HttpResponse::Ok().content_type("application/json").json(rlt)
 }
 
 pub async fn handle_eth_get_balance(
