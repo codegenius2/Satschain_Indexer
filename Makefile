@@ -1,5 +1,5 @@
 getnewblock:
-	./target/release/satschain-indexer --rpcs "https://rpc.payload.de" --database "http://localhost:8123/" --ws "wss://ethereum-rpc.publicnode.com" --new-blocks-only
+	./target/release/satschain-indexer --rpcs "https://rpc.payload.de" --ws "wss://ethereum-rpc.publicnode.com" --new-blocks-only
 getnewblockwithparam:
 	./target/release/satschain-indexer --rpcs ${rpc} --database ${db} --ws ${ws} --new-blocks-only
 syncchain:

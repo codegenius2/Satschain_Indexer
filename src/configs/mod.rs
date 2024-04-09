@@ -7,8 +7,8 @@ use url::Url;
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "EVM Indexer",
-    about = "Scalable SQL indexer for EVM compatible blockchains."
+    name = "Satschain Indexer",
+    about = "Scalable SQL indexer for Satschain compatible blockchains."
 )]
 pub struct IndexerArgs {
     #[arg(
@@ -27,8 +27,8 @@ pub struct IndexerArgs {
         long,
         help = "Clickhouse database string with username and password."
     )]
-    pub database: String,
-    #[arg(long, help = "Start log with debug.", default_value_t = false)]
+    // pub database: String,
+    // #[arg(long, help = "Start log with debug.", default_value_t = false)]
     pub debug: bool,
     #[arg(long, help = "Last block to sync.", default_value_t = 0)]
     pub end_block: i64,
@@ -87,39 +87,36 @@ impl Config {
         let ws_url: Option<String> =
             if args.ws.is_empty() { None } else { Some(args.ws) };
 
-        let url = Url::parse(&args.database).expect("unable to parse database url expected: scheme://username:password@host/database");
+        // let url = Url::parse(&args.database).expect("unable to parse database url expected: scheme://username:password@host/database");
 
         dotenv().ok();
-        let username =
+        let db_username: String =
             env::var("DB_USER_NAME").expect("DB_USER_NAME must be set");
-        let password = env::var("DB_USER_PASSWORD")
-            .expect("DB_USER_PASSWORD must be set");
-        let port = env::var("PORT").unwrap_or_else(|_| "8123".to_string());
-        let dbname = env::var("DB_NAME")
+        let db_host: String =
+            env::var("DB_HOST").expect("DB_HOST must be set");
+        let db_name: String = env::var("DB_NAME")
             .unwrap_or_else(|_| "satschain".to_string());
+        let db_password: String = env::var("DB_USER_PASSWORD")
+            .expect("DB_USER_PASSWORD must be set");
+        let db_port: String =
+            env::var("DB_PORT").unwrap_or_else(|_| "8123".to_string());
 
-        let db_host =
-            url.host().expect("no host provided for database").to_string();
+        // let db_host =
+        //     url.host().expect("no host provided for database").to_string();
 
-        let url_paths =
-            url.path_segments().map(|c| c.collect::<Vec<_>>()).unwrap();
+        // let url_paths =
+        //     url.path_segments().map(|c| c.collect::<Vec<_>>()).unwrap();
 
-        let db_name =
-            url_paths.first().expect("no database name provided on path");
+        // let db_name =
+        //     url_paths.first().expect("no database name provided on path");
 
         Self {
             batch_size: args.batch_size,
             chain,
-            db_host: format!(
-                "{}://{}:{}/{}",
-                url.scheme(),
-                db_host,
-                port,
-                dbname
-            ),
+            db_host: format!("{}:{}/{}", db_host, db_port, db_name),
             db_name: db_name.to_string(),
-            db_password: password.to_string(),
-            db_username: username.to_string(),
+            db_password: db_password.to_string(),
+            db_username: db_username.to_string(),
             debug: args.debug,
             end_block: args.end_block,
             new_blocks_only: args.new_blocks_only,

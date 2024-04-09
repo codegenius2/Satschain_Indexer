@@ -82,7 +82,7 @@ impl Rpc {
         let mut clients_urls = Vec::new();
 
         for rpc in config.rpcs.iter() {
-            let client = HttpClientBuilder::default()
+            let client: HttpClient = HttpClientBuilder::default()
                 .max_concurrent_requests(100000)
                 .request_timeout(timeout)
                 .build(rpc)
@@ -556,9 +556,12 @@ impl Rpc {
             if block.is_err() {
                 continue;
             }
+            // info!("==================new block is generated===================");
+            // println!("{:?}", block);
+            // info!("\n");
             tokio::spawn({
                 let rpc = self.clone();
-                let db = db.clone();
+                let db: Database = db.clone();
                 let block = block.unwrap().clone();
                 async move {
                     let block_number =
@@ -585,6 +588,9 @@ impl Rpc {
 
                     let block_data =
                         rpc.fetch_block(&block_number, &rpc.chain).await;
+                    // info!("==================get data block===================");
+                    // println!("{:?}", block_data.transactions);
+                    // info!("\n");
 
                     if let Some((
                         blocks,
@@ -678,7 +684,8 @@ impl Rpc {
                             db_transactions.push(db_transaction)
                         }
 
-                        let mut db_withdrawals = Vec::new();
+                        let mut db_withdrawals: Vec<DatabaseWithdrawal> =
+                            Vec::new();
 
                         if block.withdrawals.is_some() {
                             for withdrawal in
