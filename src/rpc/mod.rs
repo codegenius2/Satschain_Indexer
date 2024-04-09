@@ -74,8 +74,6 @@ pub struct Rpc {
 
 impl Rpc {
     pub async fn new(config: &Config) -> Self {
-        info!("Starting rpc service");
-
         let timeout = Duration::from_secs(60);
 
         let mut clients = Vec::new();
@@ -521,12 +519,8 @@ impl Rpc {
     }
 
     pub async fn listen_blocks(&self, db: &Database) {
-        info!("Starting new blocks listener.");
-
         let client = self.get_ws_client().await;
-        info!("Catched ws client");
         let client_id = client.request("eth_chainId", rpc_params![]).await;
-        info!("Passed here");
         match client_id {
             Ok(value) => {
                 let chain_id: U256 = match serde_json::from_value(value) {
@@ -556,9 +550,6 @@ impl Rpc {
             if block.is_err() {
                 continue;
             }
-            // info!("==================new block is generated===================");
-            // println!("{:?}", block);
-            // info!("\n");
             tokio::spawn({
                 let rpc = self.clone();
                 let db: Database = db.clone();
@@ -588,10 +579,6 @@ impl Rpc {
 
                     let block_data =
                         rpc.fetch_block(&block_number, &rpc.chain).await;
-                    // info!("==================get data block===================");
-                    // println!("{:?}", block_data.transactions);
-                    // info!("\n");
-
                     if let Some((
                         blocks,
                         transactions,
@@ -633,10 +620,8 @@ impl Rpc {
 
     async fn get_ws_client(&self) -> WsClient {
         let url = self.ws_url.clone().unwrap();
-        info!("url is {}", url);
         let client_wss: WsClient =
             WsClientBuilder::default().build(url).await.unwrap();
-        info!("get client wss");
         client_wss
     }
 
