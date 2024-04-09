@@ -1,16 +1,17 @@
 [package]
-name = "evm-indexer"
+name = "satschain-indexer"
 version = "1.4.0"
 license = "MIT"
 edition = "2021"
-repository = "https://github.com/kindynosmx/evm-indexer"
-description = "Scalable SQL indexer for EVM compatible blockchains"
+repository = "https://github.com/satschain/explorerbackend"
+description = "Scalable SQL indexer for Satschain compatible blockchains"
 
 [dependencies]
 actix-web = "4.0"
 array-bytes = "6"
 clap = { version = "4", features = ["derive"] }
 clickhouse = "0.11"
+dotenv = "0.15.0"
 ethers = { version = "2", features = ["rustls"] }
 futures = "0.3"
 hex = "0.4"
@@ -36,5 +37,5 @@ default-features = false
 features = ["colors"]
 
 [[bin]]
-path = "bin/evm-indexer.rs"
-name = "evm-indexer"
+path = "bin/satschain-indexer.rs"
+name = "satschain-indexer"
