@@ -1,5 +1,11 @@
 pub mod models;
 
+use self::models::{
+    dex_trade::DatabaseDexTrade,
+    erc1155_transfer::DatabaseERC1155Transfer,
+    erc20_transfer::DatabaseERC20Transfer,
+    erc721_transfer::DatabaseERC721Transfer,
+};
 use crate::chains::Chain;
 use clickhouse::{Client, Row};
 use futures::future::join_all;
@@ -12,13 +18,6 @@ use models::{
 };
 use serde::Serialize;
 use std::{collections::HashSet, time::Duration};
-
-use self::models::{
-    dex_trade::DatabaseDexTrade,
-    erc1155_transfer::DatabaseERC1155Transfer,
-    erc20_transfer::DatabaseERC20Transfer,
-    erc721_transfer::DatabaseERC721Transfer,
-};
 
 pub struct BlockFetchedData {
     pub blocks: Vec<DatabaseBlock>,
@@ -82,15 +81,12 @@ impl Database {
         db_name: String,
         chain: Chain,
     ) -> Self {
-        info!("Starting EVM database service");
-
         let https = HttpsConnector::new();
 
         let client = hyper::Client::builder()
             .pool_idle_timeout(POOL_IDLE_TIMEOUT)
             .build::<_, hyper::Body>(https);
 
-        info!("db host {}", db_host.clone());
         let db = Client::with_http_client(client)
             .with_url(db_host)
             .with_user(db_username)
@@ -116,10 +112,28 @@ impl Database {
         blocks
     }
 
+    pub async fn get_blocks(&self) -> Vec<DatabaseBlock> {
+        // Build SQL query string.
+        let query = format!(
+            "SELECT * FROM blocks WHERE chain = {} AND is_uncle = false AND length(uncles) = 0",
+            self.chain.id
+        );
+
+        // Log the query string for debugging purposes.
+        info!("{}", query);
+
+        // Execute the query and return the result if successful. Otherwise, log the error and return an empty vector.
+        match self.db.query(&query).fetch_all::<DatabaseBlock>().await {
+            Ok(tokens) => tokens,
+            Err(e) => {
+                error!("Error fetching blocks from the database: {}", e);
+                Vec::new()
+            }
+        }
+    }
+
     pub async fn store_data(&self, data: &BlockFetchedData) {
         let mut stores = vec![];
-        info!("store data function");
-
         if !data.contracts.is_empty() {
             let work = tokio::spawn({
                 let contracts = data.contracts.clone();
@@ -132,7 +146,6 @@ impl Database {
                     .await
                 }
             });
-            info!("Added data to contracts");
             stores.push(work);
         }
 
@@ -146,7 +159,6 @@ impl Database {
                 }
             });
 
-            info!("Added data to logs");
             stores.push(work);
         }
 
@@ -163,7 +175,6 @@ impl Database {
                 }
             });
 
-            info!("Added data to traces");
             stores.push(work);
         }
 
@@ -197,7 +208,6 @@ impl Database {
                 }
             });
 
-            info!("Added data to withdrawals");
             stores.push(work);
         }
 
@@ -215,7 +225,6 @@ impl Database {
                 }
             });
 
-            info!("Added data to erc20_transfers");
             stores.push(work);
         }
 
@@ -233,7 +242,6 @@ impl Database {
                 }
             });
 
-            info!("Added data to erc721_transfers");
             stores.push(work);
         }
 
@@ -251,7 +259,6 @@ impl Database {
                 }
             });
 
-            info!("Added data to erc1155_transfers");
             stores.push(work);
         }
 
@@ -269,7 +276,6 @@ impl Database {
                 }
             });
 
-            info!("Added data to dex_trades");
             stores.push(work);
         }
 

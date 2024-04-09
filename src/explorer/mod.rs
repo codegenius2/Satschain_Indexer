@@ -1,7 +1,100 @@
-use actix_web::{web, HttpResponse, Responder};
-use serde::Deserialize;
+use crate::configs::Config;
+use crate::db::models::block::DatabaseBlock;
+use crate::db::Database;
+use actix_web::{web, web::Json, HttpResponse, Responder};
+use ethers::etherscan::blocks;
+use serde::{Deserialize, Serialize};
 
 // Common Structs for Account Module
+
+#[derive(Deserialize, Serialize)]
+pub struct Miner {
+    ens_domain_name: Option<String>,
+    hash: String,
+    implementation_name: Option<String>,
+    // Add other fields if there are more inside `miner` not listed here
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct Reward {
+    reward: String,
+    type_field: String, // "type" is a reserved keyword in Rust, hence "type_field"
+}
+#[derive(Deserialize, Serialize)]
+pub struct BlockResponse {
+    base_fee_per_gas: String,
+    blob_gas_used: String,
+    blob_tx_count: u32,
+    burnt_fees: String,
+    burnt_fees_percentage: f64,
+    difficulty: String,
+    excess_blob_gas: String,
+    gas_limit: String,
+    gas_target_percentage: f64,
+    gas_used: String,
+    gas_used_percentage: f64,
+    hash: String,
+    height: u64,
+    miner: Miner,
+    nonce: String,
+    parent_hash: String,
+    priority_fee: u64,
+    rewards: Vec<Reward>,
+    size: u64,
+    timestamp: String,
+    total_difficulty: String,
+    tx_count: u32,
+    tx_fees: String,
+    r#type: String,
+    uncles_hashes: Vec<String>,
+    withdrawals_count: Option<u32>, // Assuming nullable means Option in Rust
+}
+impl From<DatabaseBlock> for BlockResponse {
+    fn from(db_block: DatabaseBlock) -> Self {
+        BlockResponse {
+            base_fee_per_gas: db_block
+                .base_fee_per_gas
+                .map(|v| v.to_string())
+                .unwrap_or_default(),
+            blob_gas_used: db_block.gas_used.to_string(),
+            blob_tx_count: db_block.transactions as u32,
+            burnt_fees: db_block.burned.to_string(),
+            burnt_fees_percentage: 0.0, // Calculate or provide a default
+            difficulty: db_block.difficulty.to_string(),
+            excess_blob_gas: "0".to_string(), // Default if not available
+            gas_limit: db_block.gas_limit.to_string(),
+            gas_target_percentage: 0.0, // Calculate or provide a default
+            gas_used: db_block.gas_used.to_string(),
+            gas_used_percentage: 0.0, // Calculate based on gas_limit and gas_used
+            hash: db_block.hash,
+            height: db_block.number as u64,
+            miner: Miner {
+                ens_domain_name: None,
+                hash: db_block.miner,
+                implementation_name: None,
+            },
+            nonce: db_block.nonce,
+            parent_hash: db_block.parent_hash,
+            priority_fee: 0, // Default if not available
+            rewards: vec![], // Construct Reward vector as necessary
+            size: db_block.size as u64,
+            timestamp: db_block.timestamp.to_string(),
+            total_difficulty: db_block
+                .total_difficulty
+                .map(|v| v.to_string())
+                .unwrap_or_default(),
+            tx_count: db_block.transactions as u32,
+            tx_fees: db_block.total_fee_reward.to_string(),
+            r#type: "block".to_string(),
+            uncles_hashes: db_block.uncles,
+            withdrawals_count: None, // Default or convert if possible
+        }
+    }
+}
+
+#[derive(Deserialize)]
+pub struct GetBlockQuery {}
+
 #[derive(Deserialize)]
 pub struct AccountQuery {
     address: String,
@@ -141,6 +234,28 @@ pub async fn status() -> impl Responder {
 }
 
 // Handler Functions
+pub async fn handle_getblocks(
+    query: web::Query<GetBlockQuery>,
+) -> impl Responder {
+    let config = Config::new();
+
+    let db = Database::new(
+        config.db_host.clone(),
+        config.db_username.clone(),
+        config.db_password.clone(),
+        config.db_name.clone(),
+        config.chain.clone(),
+    )
+    .await;
+
+    let database_blocks = db.get_blocks().await;
+    let blocks: Vec<BlockResponse> =
+        database_blocks.into_iter().map(BlockResponse::from).collect();
+
+    // println!("{:?}", blocks);
+    HttpResponse::Ok().content_type("application/json").json(blocks)
+}
+
 pub async fn handle_eth_get_balance(
     query: web::Query<AccountQuery>,
 ) -> impl Responder {
