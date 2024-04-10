@@ -36,12 +36,12 @@ async fn main() -> std::io::Result<()> {
     )
     .await;
 
-    info!("Hello");
-    db.get_indexed_blocks().await;
-    info!("third");
-    let tempdata = db.get_blocks().await;
-    println!("{:?}", tempdata);
-    info!("Hello workd");
+    // info!("Hello");
+    // db.get_indexed_blocks().await;
+    // info!("third");
+    // let tempdata = db.get_blocks().await;
+    // println!("{:?}", tempdata);
+    // info!("Hello workd");
     // if config.ws_url.is_some() && config.end_block == 0
     //     || config.end_block == -1
     // {
