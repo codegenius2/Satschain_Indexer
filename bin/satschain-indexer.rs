@@ -36,26 +36,6 @@ async fn main() -> std::io::Result<()> {
     )
     .await;
 
-<<<<<<< HEAD
-    // print!(" mmmmmmmmmmmmmmmmmmmm ");
-    // let t = db.get_blocks2().await;
-    // println!("t = {:?}", t);
-    // Ok(())
-=======
-    // info!("Hello");
-    // db.get_indexed_blocks().await;
-    // info!("third");
-    // let tempdata = db.get_blocks().await;
-    // println!("{:?}", tempdata);
-    // info!("Hello workd");
-    // if config.ws_url.is_some() && config.end_block == 0
-    //     || config.end_block == -1
-    // {
-    //     tokio::spawn({
-    //         let rpc: Rpc = rpc.clone();
-    //         let db: Database = db.clone();
->>>>>>> d25e483a3e67801a40d12d61b13108b1284dbacf
-
     if config.ws_url.is_some() && config.end_block == 0
         || config.end_block == -1
     {
