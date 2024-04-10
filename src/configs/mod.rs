@@ -1,6 +1,5 @@
 use crate::chains::{get_chain, Chain};
 use clap::Parser;
-use dotenv::dotenv;
 use std::env;
 
 #[derive(Parser, Debug)]
@@ -87,7 +86,6 @@ impl Config {
 
         // let url = Url::parse(&args.database).expect("unable to parse database url expected: scheme://username:password@host/database");
 
-        dotenv().ok();
         let db_username: String =
             env::var("DB_USER_NAME").expect("DB_USER_NAME must be set");
         let db_host: String =

@@ -1,5 +1,6 @@
 use actix_cors::Cors;
 use actix_web::{middleware, web, App, HttpServer};
+use dotenv::dotenv;
 use futures::future::join_all;
 use log::*;
 use satschain_indexer::{
@@ -10,12 +11,18 @@ use satschain_indexer::{
     rpc::Rpc,
 };
 use simple_logger::SimpleLogger;
+use std::env;
 use std::time::Duration;
 use tokio::time::sleep;
 
 #[tokio::main()]
 async fn main() -> std::io::Result<()> {
     let log = SimpleLogger::new().with_level(LevelFilter::Info);
+
+    dotenv().ok();
+
+    let explorer_server_port: String = env::var("EXPLORER_SERVER_PORT")
+        .unwrap_or_else(|_| "8200".to_string());
 
     let config = Config::new();
 
@@ -175,7 +182,7 @@ async fn main() -> std::io::Result<()> {
                 web::get().to(explorer::handle_get_status),
             )
     })
-    .bind("localhost:8200")? // Bind server to localhost:8080
+    .bind(format!("localhost:{}", explorer_server_port))? // Bind server to localhost:8080
     .run();
     tokio::spawn(t);
 
