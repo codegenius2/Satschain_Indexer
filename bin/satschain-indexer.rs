@@ -35,160 +35,161 @@ async fn main() -> std::io::Result<()> {
         config.chain.clone(),
     )
     .await;
-    print!(" mmmmmmmmmmmmmmmmmmmm ");
-    let t = db.get_blocks2().await;
-    println!("t = {:?}", t);
-    Ok(())
 
-    // if config.ws_url.is_some() && config.end_block == 0
-    //     || config.end_block == -1
-    // {
-    //     tokio::spawn({
-    //         let rpc: Rpc = rpc.clone();
-    //         let db: Database = db.clone();
+    // print!(" mmmmmmmmmmmmmmmmmmmm ");
+    // let t = db.get_blocks2().await;
+    // println!("t = {:?}", t);
+    // Ok(())
 
-    //         async move {
-    //             loop {
-    //                 rpc.listen_blocks(&db).await;
+    if config.ws_url.is_some() && config.end_block == 0
+        || config.end_block == -1
+    {
+        tokio::spawn({
+            let rpc: Rpc = rpc.clone();
+            let db: Database = db.clone();
 
-    //                 sleep(Duration::from_millis(500)).await;
-    //             }
-    //         }
-    //     });
-    // }
+            async move {
+                loop {
+                    rpc.listen_blocks(&db).await;
 
-    // let t = HttpServer::new(|| {
-    //     let cors = Cors::permissive();
+                    sleep(Duration::from_millis(500)).await;
+                }
+            }
+        });
+    }
 
-    //     App::new()
-    //         .wrap(cors)
-    //         .wrap(middleware::Logger::default())
-    //         .route("/", web::get().to(explorer::index)) // GET request to "/"
-    //         .route("/status", web::get().to(explorer::status)) // GET request to "/status"
-    //         .route(
-    //             "/api/v2/blocks",
-    //             web::get().to(explorer::handle_getblocks),
-    //         )
-    //         .route(
-    //             "/api/eth_get_balance",
-    //             web::get().to(explorer::handle_eth_get_balance),
-    //         )
-    //         .route("/api/balance", web::get().to(explorer::handle_balance))
-    //         .route(
-    //             "/api/balancemulti",
-    //             web::get().to(explorer::handle_balancemulti),
-    //         )
-    //         .route(
-    //             "/api/pendingtxlist",
-    //             web::get().to(explorer::handle_pendingtxlist),
-    //         )
-    //         .route("/api/txlist", web::get().to(explorer::handle_txlist))
-    //         .route(
-    //             "/api/txlistinternal",
-    //             web::get().to(explorer::handle_txlistinternal),
-    //         )
-    //         .route("/api/tokentx", web::get().to(explorer::handle_tokentx))
-    //         .route(
-    //             "/api/tokenbalance",
-    //             web::get().to(explorer::handle_tokenbalance),
-    //         )
-    //         .route(
-    //             "/api/getblockreward",
-    //             web::get().to(explorer::handle_getblockreward),
-    //         )
-    //         .route(
-    //             "/api/getblockcountdown",
-    //             web::get().to(explorer::handle_getblockcountdown),
-    //         )
-    //         .route(
-    //             "/api/getblocknobytime",
-    //             web::get().to(explorer::handle_getblocknobytime),
-    //         )
-    //         .route(
-    //             "/api/eth_block_number",
-    //             web::get().to(explorer::handle_eth_block_number),
-    //         )
-    //         .route(
-    //             "/api/listcontracts",
-    //             web::get().to(explorer::handle_listcontracts),
-    //         )
-    //         .route("/api/getabi", web::get().to(explorer::handle_getabi))
-    //         .route(
-    //             "/api/getsourcecode",
-    //             web::get().to(explorer::handle_getsourcecode),
-    //         )
-    //         .route(
-    //             "/api/getcontractcreation",
-    //             web::get().to(explorer::handle_getcontractcreation),
-    //         )
-    //         .route("/api/verify", web::get().to(explorer::handle_verify))
-    //         .route(
-    //             "/api/verify_via_sourcify",
-    //             web::get().to(explorer::handle_verify_via_sourcify),
-    //         )
-    //         .route(
-    //             "/api/verify_vyper_contract",
-    //             web::get().to(explorer::handle_verify_vyper_contract),
-    //         )
-    //         .route(
-    //             "/api/verifysourcecode",
-    //             web::get().to(explorer::handle_verifysourcecode),
-    //         )
-    //         .route(
-    //             "/api/checkverifystatus",
-    //             web::get().to(explorer::handle_checkverifystatus),
-    //         )
-    //         .route(
-    //             "/api/verifyproxycontract",
-    //             web::get().to(explorer::handle_verifyproxycontract),
-    //         )
-    //         .route(
-    //             "/api/checkproxyverification",
-    //             web::get().to(explorer::handle_checkproxyverification),
-    //         )
-    //         .route(
-    //             "/api/get_logs",
-    //             web::get().to(explorer::handle_get_logs),
-    //         )
-    //         .route(
-    //             "/api/token_supply",
-    //             web::get().to(explorer::handle_token_supply),
-    //         )
-    //         .route(
-    //             "/api/get_token",
-    //             web::get().to(explorer::handle_get_token),
-    //         )
-    //         .route(
-    //             "/api/get_token_holders",
-    //             web::get().to(explorer::handle_get_token_holders),
-    //         )
-    //         .route(
-    //             "/api/bridged_token_list",
-    //             web::get().to(explorer::handle_bridged_token_list),
-    //         )
-    //         .route(
-    //             "/api/get_tx_info",
-    //             web::get().to(explorer::handle_get_tx_info),
-    //         )
-    //         .route(
-    //             "/api/get_tx_receipt_status",
-    //             web::get().to(explorer::handle_get_tx_receipt_status),
-    //         )
-    //         .route(
-    //             "/api/get_status",
-    //             web::get().to(explorer::handle_get_status),
-    //         )
-    // })
-    // .bind("localhost:8200")? // Bind server to localhost:8080
-    // .run()
-    // .await;
+    let t = HttpServer::new(|| {
+        let cors = Cors::permissive();
 
-    // loop {
-    //     if !config.new_blocks_only {
-    //         sync_chain(&rpc, &db, &config).await;
-    //     }
-    //     sleep(Duration::from_secs(30)).await;
-    // }
+        App::new()
+            .wrap(cors)
+            .wrap(middleware::Logger::default())
+            .route("/", web::get().to(explorer::index)) // GET request to "/"
+            .route("/status", web::get().to(explorer::status)) // GET request to "/status"
+            .route(
+                "/api/v2/blocks",
+                web::get().to(explorer::handle_getblocks),
+            )
+            .route(
+                "/api/eth_get_balance",
+                web::get().to(explorer::handle_eth_get_balance),
+            )
+            .route("/api/balance", web::get().to(explorer::handle_balance))
+            .route(
+                "/api/balancemulti",
+                web::get().to(explorer::handle_balancemulti),
+            )
+            .route(
+                "/api/pendingtxlist",
+                web::get().to(explorer::handle_pendingtxlist),
+            )
+            .route("/api/txlist", web::get().to(explorer::handle_txlist))
+            .route(
+                "/api/txlistinternal",
+                web::get().to(explorer::handle_txlistinternal),
+            )
+            .route("/api/tokentx", web::get().to(explorer::handle_tokentx))
+            .route(
+                "/api/tokenbalance",
+                web::get().to(explorer::handle_tokenbalance),
+            )
+            .route(
+                "/api/getblockreward",
+                web::get().to(explorer::handle_getblockreward),
+            )
+            .route(
+                "/api/getblockcountdown",
+                web::get().to(explorer::handle_getblockcountdown),
+            )
+            .route(
+                "/api/getblocknobytime",
+                web::get().to(explorer::handle_getblocknobytime),
+            )
+            .route(
+                "/api/eth_block_number",
+                web::get().to(explorer::handle_eth_block_number),
+            )
+            .route(
+                "/api/listcontracts",
+                web::get().to(explorer::handle_listcontracts),
+            )
+            .route("/api/getabi", web::get().to(explorer::handle_getabi))
+            .route(
+                "/api/getsourcecode",
+                web::get().to(explorer::handle_getsourcecode),
+            )
+            .route(
+                "/api/getcontractcreation",
+                web::get().to(explorer::handle_getcontractcreation),
+            )
+            .route("/api/verify", web::get().to(explorer::handle_verify))
+            .route(
+                "/api/verify_via_sourcify",
+                web::get().to(explorer::handle_verify_via_sourcify),
+            )
+            .route(
+                "/api/verify_vyper_contract",
+                web::get().to(explorer::handle_verify_vyper_contract),
+            )
+            .route(
+                "/api/verifysourcecode",
+                web::get().to(explorer::handle_verifysourcecode),
+            )
+            .route(
+                "/api/checkverifystatus",
+                web::get().to(explorer::handle_checkverifystatus),
+            )
+            .route(
+                "/api/verifyproxycontract",
+                web::get().to(explorer::handle_verifyproxycontract),
+            )
+            .route(
+                "/api/checkproxyverification",
+                web::get().to(explorer::handle_checkproxyverification),
+            )
+            .route(
+                "/api/get_logs",
+                web::get().to(explorer::handle_get_logs),
+            )
+            .route(
+                "/api/token_supply",
+                web::get().to(explorer::handle_token_supply),
+            )
+            .route(
+                "/api/get_token",
+                web::get().to(explorer::handle_get_token),
+            )
+            .route(
+                "/api/get_token_holders",
+                web::get().to(explorer::handle_get_token_holders),
+            )
+            .route(
+                "/api/bridged_token_list",
+                web::get().to(explorer::handle_bridged_token_list),
+            )
+            .route(
+                "/api/get_tx_info",
+                web::get().to(explorer::handle_get_tx_info),
+            )
+            .route(
+                "/api/get_tx_receipt_status",
+                web::get().to(explorer::handle_get_tx_receipt_status),
+            )
+            .route(
+                "/api/get_status",
+                web::get().to(explorer::handle_get_status),
+            )
+    })
+    .bind("localhost:8200")? // Bind server to localhost:8080
+    .run()
+    .await;
+
+    loop {
+        if !config.new_blocks_only {
+            sync_chain(&rpc, &db, &config).await;
+        }
+        sleep(Duration::from_secs(30)).await;
+    }
 }
 
 async fn sync_chain(rpc: &Rpc, db: &Database, config: &Config) {

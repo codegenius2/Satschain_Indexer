@@ -9,6 +9,8 @@ use crate::utils::format::{
     format_nonce, SerU256,
 };
 
+type StrArr = Vec<String>;
+
 #[serde_as]
 #[derive(Debug, Clone, Row, Serialize, Deserialize)]
 pub struct DatabaseBlock {
@@ -42,7 +44,7 @@ pub struct DatabaseBlock {
     pub total_fee_reward: U256,
     pub transactions: u16,
     pub transactions_root: String,
-    pub uncles: Vec<String>,
+    pub uncles: StrArr,
     #[serde_as(as = "SerU256")]
     pub uncle_rewards: U256,
     pub withdrawals_root: Option<String>,

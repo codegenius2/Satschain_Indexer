@@ -114,44 +114,17 @@ impl Database {
     }
 
     pub async fn get_blocks2(&self) -> Vec<String> {
-        // Build SQL query string.
         let query = format!(
-            "SELECT uncles FROM blocks WHERE chain = {} AND number = 563015 ORDER BY number DESC LIMIT 10",
+            "SELECT uncles FROM blocks WHERE chain = {}",
             self.chain.id
         );
 
-        // Log the query string for debugging purposes.
-        info!("{}", query);
-
-        // Execute the query and return the result if successful. Otherwise, log the error and return an empty vector.
-        match self.db.query(&query).fetch_all().await {
-            Ok(rows) => {
-                let mut uncles_list = Vec::new();
-                for row in rows {
-                    let uncles: String = row;
-                    // Try to deserialize the JSON string into Vec<String>
-                    match from_str::<Vec<String>>(&uncles) {
-                        Ok(uncles) => uncles_list.extend(uncles),
-                        Err(e) => {
-                            error!(
-                                "Failed to deserialize 'uncles': {}",
-                                e
-                            );
-                            continue;
-                        }
-                    }
-                }
-                uncles_list
-            }
-            Err(e) => {
-                error!(
-                    "Error fetching blocks from the database aa: {}",
-                    e
-                );
-                Vec::new()
-            }
+        match self.db.query(&query).fetch_all::<String>().await {
+            Ok(tokens) => tokens,
+            Err(_) => Vec::new(),
         }
     }
+
     pub async fn get_blocks(&self, skip_count: u32) -> Vec<DatabaseBlock> {
         // Build SQL query string.
         let query = format!(
