@@ -2,6 +2,7 @@ use crate::configs::Config;
 use crate::db::models::block::DatabaseBlock;
 use crate::db::Database;
 use actix_web::{web, HttpResponse, Responder};
+use chrono::{DateTime, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 
 // Common Structs for Account Module
@@ -77,7 +78,10 @@ impl From<DatabaseBlock> for BlockResponse {
             priority_fee: 0, // Default if not available
             rewards: vec![], // Construct Reward vector as necessary
             size: db_block.size as u64,
-            timestamp: db_block.timestamp.to_string(),
+            timestamp: Utc
+                .timestamp(db_block.timestamp as i64, 0)
+                .format("%Y-%m-%dT%H:%M:%S%.fZ")
+                .to_string(),
             total_difficulty: db_block
                 .total_difficulty
                 .map(|v| v.to_string())
