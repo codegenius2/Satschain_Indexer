@@ -36,6 +36,12 @@ async fn main() -> std::io::Result<()> {
     )
     .await;
 
+<<<<<<< HEAD
+    // print!(" mmmmmmmmmmmmmmmmmmmm ");
+    // let t = db.get_blocks2().await;
+    // println!("t = {:?}", t);
+    // Ok(())
+=======
     // info!("Hello");
     // db.get_indexed_blocks().await;
     // info!("third");
@@ -48,16 +54,24 @@ async fn main() -> std::io::Result<()> {
     //     tokio::spawn({
     //         let rpc: Rpc = rpc.clone();
     //         let db: Database = db.clone();
+>>>>>>> d25e483a3e67801a40d12d61b13108b1284dbacf
 
-    //         async move {
-    //             loop {
-    //                 rpc.listen_blocks(&db).await;
+    if config.ws_url.is_some() && config.end_block == 0
+        || config.end_block == -1
+    {
+        tokio::spawn({
+            let rpc: Rpc = rpc.clone();
+            let db: Database = db.clone();
 
-    //                 sleep(Duration::from_millis(500)).await;
-    //             }
-    //         }
-    //     });
-    // }
+            async move {
+                loop {
+                    rpc.listen_blocks(&db).await;
+
+                    sleep(Duration::from_millis(500)).await;
+                }
+            }
+        });
+    }
 
     let t = HttpServer::new(|| {
         let cors = Cors::permissive();
@@ -194,6 +208,7 @@ async fn main() -> std::io::Result<()> {
 }
 
 async fn sync_chain(rpc: &Rpc, db: &Database, config: &Config) {
+    info!("here");
     let mut indexed_blocks = db.get_indexed_blocks().await;
 
     // If there are no indexed blocks, insert the genesis transactions
@@ -290,6 +305,7 @@ async fn sync_chain(rpc: &Rpc, db: &Database, config: &Config) {
         db.store_data(&fetched_data).await;
 
         for block in fetched_data.blocks.iter() {
+            info!("block_number {}", block.clone().number);
             indexed_blocks.insert(block.number);
         }
     }

@@ -1,8 +1,7 @@
 use crate::configs::Config;
 use crate::db::models::block::DatabaseBlock;
 use crate::db::Database;
-use actix_web::{web, web::Json, HttpResponse, Responder};
-use ethers::etherscan::blocks;
+use actix_web::{web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 
 // Common Structs for Account Module
@@ -94,7 +93,7 @@ impl From<DatabaseBlock> for BlockResponse {
 
 #[derive(Deserialize, Serialize)]
 pub struct NextPageParams {
-    block_number: u32,
+    block_number: u64,
     items_count: u32,
 }
 
@@ -104,7 +103,10 @@ pub struct BlockResponseData {
     next_page_params: NextPageParams,
 }
 #[derive(Deserialize)]
-pub struct GetBlockQuery {}
+pub struct GetBlockQuery {
+    block_number: Option<u64>,
+    items_count: Option<u32>,
+}
 
 #[derive(Deserialize)]
 pub struct AccountQuery {
@@ -248,6 +250,8 @@ pub async fn status() -> impl Responder {
 pub async fn handle_getblocks(
     query: web::Query<GetBlockQuery>,
 ) -> impl Responder {
+    let skip_count = query.items_count.unwrap_or(0);
+
     let config = Config::new();
 
     let db = Database::new(
@@ -259,12 +263,21 @@ pub async fn handle_getblocks(
     )
     .await;
 
-    let database_blocks = db.get_blocks().await;
+    let database_blocks = db.get_blocks(skip_count.clone()).await;
+    println!("-------- db_blocks -------- {:?}", database_blocks);
     let blocks: Vec<BlockResponse> =
         database_blocks.into_iter().map(BlockResponse::from).collect();
 
-    let next_page =
-        NextPageParams { block_number: 19999, items_count: 50 };
+    let block_number;
+    if let Some(last_block) = blocks.last() {
+        block_number = last_block.height;
+    } else {
+        block_number = 1;
+    }
+    let next_page = NextPageParams {
+        block_number: block_number - 1,
+        items_count: skip_count + blocks.len() as u32,
+    };
 
     let rlt =
         BlockResponseData { items: blocks, next_page_params: next_page };
