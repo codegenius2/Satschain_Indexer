@@ -9,6 +9,6 @@ syncchain:
 syncchainwithparam:
 	./target/release/satschain-indexer --rpcs ${rpc} --start-block ${start} --end-block ${end} --batch-size ${batch}
 fulldata:
-	./target/release/satschain-indexer --rpcs "https://rpc.payload.de" --start-block 0 --batch-size 500
+	./target/release/satschain-indexer --rpcs "https://rpc.payload.de" --ws "wss://ethereum-rpc.publicnode.com" --start-block 0 --batch-size 500
 fulldatawithparam:
 	./target/release/satschain-indexer --rpcs ${rpc} --start-block ${start} --batch-size 500

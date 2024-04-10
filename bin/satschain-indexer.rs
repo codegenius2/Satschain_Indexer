@@ -176,8 +176,8 @@ async fn main() -> std::io::Result<()> {
             )
     })
     .bind("localhost:8200")? // Bind server to localhost:8080
-    .run()
-    .await;
+    .run();
+    tokio::spawn(t);
 
     loop {
         if !config.new_blocks_only {
