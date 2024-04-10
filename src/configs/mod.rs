@@ -1,9 +1,7 @@
 use crate::chains::{get_chain, Chain};
 use clap::Parser;
 use dotenv::dotenv;
-use jsonrpsee::tracing::info;
 use std::env;
-use url::Url;
 
 #[derive(Parser, Debug)]
 #[command(
