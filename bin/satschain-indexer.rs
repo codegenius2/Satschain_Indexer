@@ -36,28 +36,22 @@ async fn main() -> std::io::Result<()> {
     )
     .await;
 
-    // info!("Hello");
-    // db.get_indexed_blocks().await;
-    // info!("third");
-    // let tempdata = db.get_blocks().await;
-    // println!("{:?}", tempdata);
-    // info!("Hello workd");
-    // if config.ws_url.is_some() && config.end_block == 0
-    //     || config.end_block == -1
-    // {
-    //     tokio::spawn({
-    //         let rpc: Rpc = rpc.clone();
-    //         let db: Database = db.clone();
+    if config.ws_url.is_some() && config.end_block == 0
+        || config.end_block == -1
+    {
+        tokio::spawn({
+            let rpc: Rpc = rpc.clone();
+            let db: Database = db.clone();
 
-    //         async move {
-    //             loop {
-    //                 rpc.listen_blocks(&db).await;
+            async move {
+                loop {
+                    rpc.listen_blocks(&db).await;
 
-    //                 sleep(Duration::from_millis(500)).await;
-    //             }
-    //         }
-    //     });
-    // }
+                    sleep(Duration::from_millis(500)).await;
+                }
+            }
+        });
+    }
 
     let t = HttpServer::new(|| {
         let cors = Cors::permissive();
@@ -194,6 +188,7 @@ async fn main() -> std::io::Result<()> {
 }
 
 async fn sync_chain(rpc: &Rpc, db: &Database, config: &Config) {
+    info!("here");
     let mut indexed_blocks = db.get_indexed_blocks().await;
 
     // If there are no indexed blocks, insert the genesis transactions
@@ -290,6 +285,7 @@ async fn sync_chain(rpc: &Rpc, db: &Database, config: &Config) {
         db.store_data(&fetched_data).await;
 
         for block in fetched_data.blocks.iter() {
+            info!("block_number {}", block.clone().number);
             indexed_blocks.insert(block.number);
         }
     }
