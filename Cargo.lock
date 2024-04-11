@@ -3684,6 +3684,7 @@ dependencies = [
  "actix-cors",
  "actix-web",
  "array-bytes",
+ "chrono",
  "clap",
  "clickhouse",
  "clickhouse-rs",
