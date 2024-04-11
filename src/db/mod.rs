@@ -82,13 +82,25 @@ impl Database {
         db_name: String,
         chain: Chain,
     ) -> Self {
-        let https = HttpsConnector::new();
+        // let https = HttpsConnector::new();
 
-        let client = hyper::Client::builder()
-            .pool_idle_timeout(POOL_IDLE_TIMEOUT)
-            .build::<_, hyper::Body>(https);
+        // let client = hyper::Client::builder()
+        //     .pool_idle_timeout(POOL_IDLE_TIMEOUT)
+        //     .build::<_, hyper::Body>(https);
 
-        let db = Client::with_http_client(client)
+        // let db = Client::with_http_client(client)
+        //     .with_url(db_host)
+        //     .with_user(db_username)
+        //     .with_password(db_password)
+        //     .with_database(db_name);
+        // let db = Client::default()
+        //     .with_url(
+        //         "https://vyhdu8a8kd.us-east1.gcp.clickhouse.cloud:8443",
+        //     )
+        //     .with_user("default")
+        //     .with_password("P~og~5_cVoY8E")
+        //     .with_database("satschain");
+        let db = Client::default()
             .with_url(db_host)
             .with_user(db_username)
             .with_password(db_password)
