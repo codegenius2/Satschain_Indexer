@@ -109,7 +109,7 @@ impl Config {
         Self {
             batch_size: args.batch_size,
             chain,
-            db_host: format!("{}:{}/{}", db_host, db_port, db_name),
+            db_host: format!("{}:{}", db_host, db_port),
             db_name: db_name.to_string(),
             db_password: db_password.to_string(),
             db_username: db_username.to_string(),
