@@ -28,10 +28,12 @@ pub enum TransactionStatus {
     Success = 2,
 }
 
+type AccessList = Vec<(String, Vec<String>)>;
+
 #[serde_as]
 #[derive(Debug, Clone, Row, Serialize, Deserialize)]
 pub struct DatabaseTransaction {
-    pub access_list: Vec<(String, Vec<String>)>,
+    pub access_list: AccessList,
     pub base_fee_per_gas: Option<u64>,
     pub block_hash: String,
     pub block_number: u32,
@@ -194,5 +196,36 @@ impl DatabaseTransaction {
         self.effective_transaction_fee = Some(effective_transaction_fee);
         self.gas_used = Some(gas_used.as_usize() as u32);
         self.status = Some(status)
+    }
+
+    pub fn new() -> Self {
+        Self {
+            access_list: Vec::new(),
+            base_fee_per_gas: None,
+            block_hash: "".to_string(),
+            block_number: 0,
+            burned: None,
+            chain: 0,
+            contract_created: None,
+            cumulative_gas_used: None,
+            effective_gas_price: None,
+            effective_transaction_fee: None,
+            from: "".to_string(),
+            gas: 0,
+            gas_price: None,
+            gas_used: None,
+            hash: "".to_string(),
+            input: "".to_string(),
+            max_fee_per_gas: None,
+            max_priority_fee_per_gas: None,
+            method: "".to_string(),
+            nonce: 0,
+            status: None,
+            timestamp: 0,
+            to: "".to_string(),
+            transaction_index: 0,
+            transaction_type: TransactionType::Legacy,
+            value: U256::zero(),
+        }
     }
 }

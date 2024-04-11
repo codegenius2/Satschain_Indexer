@@ -114,4 +114,37 @@ impl DatabaseBlock {
         self.total_fee_reward = total_fee_reward;
         self.uncle_rewards = uncle_rewards;
     }
+
+    pub fn new() -> Self {
+        Self {
+            base_block_reward: U256::zero(),
+            base_fee_per_gas: None,
+            burned: U256::zero(),
+            chain: 0,
+            difficulty: U256::zero(),
+            extra_data: "".to_string(),
+            gas_limit: 0,
+            gas_used: 0,
+            hash: "".to_string(),
+            is_uncle: false,
+            logs_bloom: "".to_string(),
+            miner: "".to_string(),
+            mix_hash: None,
+            nonce: "".to_string(),
+            number: 0,
+            parent_hash: "".to_string(),
+            receipts_root: "".to_string(),
+            sha3_uncles: "".to_string(),
+            size: 0,
+            state_root: "".to_string(),
+            timestamp: 0,
+            total_difficulty: None,
+            total_fee_reward: U256::zero(),
+            transactions: 0,
+            transactions_root: "".to_string(),
+            uncles: Vec::new(),
+            uncle_rewards: U256::zero(),
+            withdrawals_root: None,
+        }
+    }
 }
