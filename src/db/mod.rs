@@ -196,10 +196,10 @@ impl Database {
         hash: String,
     ) -> DatabaseTransaction {
         let query = format!(
-            "SELECT * FROM transactions WHERE chain = {} AND hash = {}",
+            "SELECT * FROM transactions WHERE chain = {} AND hash = '{}'",
             self.chain.id, hash
         );
-
+        info!("{}", query);
         match self.db.query(&query).fetch_one().await {
             Ok(token) => token,
             Err(e) => {

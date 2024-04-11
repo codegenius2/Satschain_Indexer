@@ -542,6 +542,7 @@ pub async fn handle_get_transaction_by_id(
     let database_transaction = TransactionResponse::from(
         db.get_transaction_by_id(hash.clone()).await,
     );
+
     HttpResponse::Ok()
         .content_type("application/json")
         .json(database_transaction)
