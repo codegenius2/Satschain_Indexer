@@ -285,6 +285,12 @@ pub async fn handle_getblocks(
     HttpResponse::Ok().content_type("application/json").json(rlt)
 }
 
+// Define a handler function that accepts a web::Path wrapping a tuple containing the ID
+pub async fn get_block_by_id(info: web::Path<(u64,)>) -> impl Responder {
+    let block_id = info.0;
+    format!("You requested information for block ID: {}", block_id)
+}
+
 pub async fn handle_eth_get_balance(
     query: web::Query<AccountQuery>,
 ) -> impl Responder {

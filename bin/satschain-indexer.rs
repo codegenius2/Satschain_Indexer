@@ -73,6 +73,10 @@ async fn main() -> std::io::Result<()> {
                 web::get().to(explorer::handle_getblocks),
             )
             .route(
+                "/api/v2/blocks/{id}",
+                web::get().to(explorer::get_block_by_id),
+            )
+            .route(
                 "/api/eth_get_balance",
                 web::get().to(explorer::handle_eth_get_balance),
             )
