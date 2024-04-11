@@ -133,6 +133,70 @@ impl Database {
         }
     }
 
+    pub async fn get_block_by_id(&self, number: u64) -> DatabaseBlock {
+        let query = format!(
+            "SELECT * FROM blocks WHERE chain = {} AND is_uncle = false AND number = {}",
+            self.chain.id, number
+        );
+
+        match self.db.query(&query).fetch_one().await {
+            Ok(token) => token,
+            Err(e) => {
+                error!("Error fetching block by id: {}", e);
+                DatabaseBlock::new()
+            }
+        }
+    }
+
+    pub async fn get_transactions(
+        &self,
+        skip_count: u32,
+    ) -> Vec<DatabaseTransaction> {
+        // Build SQL query string.
+        let query = format!(
+            "SELECT * FROM transactions WHERE chain = {} ORDER BY timestamp DESC LIMIT 50 OFFSET {}",
+            self.chain.id, skip_count
+        );
+
+        // Log the query string for debugging purposes.
+        info!("{}", query);
+
+        // Execute the query and return the result if successful. Otherwise, log the error and return an empty vector.
+        match self
+            .db
+            .query(&query)
+            .fetch_all::<DatabaseTransaction>()
+            .await
+        {
+            Ok(tokens) => tokens,
+            Err(e) => {
+                error!(
+                    "Error fetching transaction from the database: {}",
+                    e
+                );
+                Vec::new()
+            }
+        }
+    }
+
+    pub async fn get_transaction_by_id(
+        &self,
+        hash: String,
+    ) -> DatabaseTransaction {
+        let query = format!(
+            "SELECT * FROM transactions WHERE chain = {} AND hash = {}",
+            self.chain.id, hash
+        );
+
+        match self.db.query(&query).fetch_one().await {
+            Ok(token) => token,
+            Err(e) => {
+                error!("Error fetching block by id: {}", e);
+                DatabaseTransaction::new()
+            }
+        }
+    }
+
     pub async fn store_data(&self, data: &BlockFetchedData) {
         let mut stores = vec![];
         if !data.contracts.is_empty() {

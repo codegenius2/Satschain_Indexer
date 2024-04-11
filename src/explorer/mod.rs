@@ -1,13 +1,16 @@
 use crate::configs::Config;
 use crate::db::models::block::DatabaseBlock;
+use crate::db::models::transaction::{
+    DatabaseTransaction, TransactionStatus,
+};
 use crate::db::Database;
 use actix_web::{web, HttpResponse, Responder};
 use chrono::{DateTime, TimeZone, Utc};
+use log::info;
 use serde::{Deserialize, Serialize};
-
 // Common Structs for Account Module
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct Miner {
     ens_domain_name: Option<String>,
     hash: String,
@@ -15,12 +18,13 @@ pub struct Miner {
     // Add other fields if there are more inside `miner` not listed here
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct Reward {
     reward: String,
     type_field: String, // "type" is a reserved keyword in Rust, hence "type_field"
 }
-#[derive(Deserialize, Serialize)]
+
+#[derive(Deserialize, Serialize, Clone)]
 pub struct BlockResponse {
     base_fee_per_gas: String,
     blob_gas_used: String,
@@ -47,7 +51,7 @@ pub struct BlockResponse {
     tx_fees: String,
     r#type: String,
     uncles_hashes: Vec<String>,
-    withdrawals_count: Option<u32>, // Assuming nullable means Option in Rust
+    withdrawals_count: Option<u32>,
 }
 impl From<DatabaseBlock> for BlockResponse {
     fn from(db_block: DatabaseBlock) -> Self {
@@ -95,6 +99,151 @@ impl From<DatabaseBlock> for BlockResponse {
     }
 }
 
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct FeeType {
+    r#type: String,
+    value: String,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct TransAccountType {
+    ens_domain_name: String,
+    hash: String,
+    implementation_name: Option<String>,
+    is_contract: bool,
+    is_verified: Option<bool>,
+    metadata: Option<String>,
+    name: Option<String>,
+    private_tags: Vec<String>,
+    public_tags: Vec<String>,
+    watchlist_names: Vec<String>,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct TransactionResponse {
+    actions: Vec<String>,
+    base_fee_per_gas: String,
+    block: u64,
+    confirmation_duration: Vec<u32>,
+    confirmations: u32,
+    created_contract: Option<String>,
+    decode_input: Option<String>,
+    exchange_rate: String,
+    fee: FeeType,
+    from: TransAccountType,
+    gas_limit: String,
+    gas_price: String,
+    gas_used: String,
+    has_error_in_internal_txs: bool,
+    hash: String,
+    max_fee_per_gas: String,
+    max_priority_fee_per_gas: String,
+    method: Option<String>,
+    nonce: u32,
+    position: u32,
+    priority_fee: Option<String>,
+    raw_input: String,
+    result: String,
+    revert_reason: Option<String>,
+    status: String,
+    timestamp: String,
+    to: TransAccountType,
+    token_transfers: Option<String>,
+    token_transfers_overflow: Option<String>,
+    tx_burnt_fee: Option<String>,
+    tx_tag: Option<String>,
+    tx_types: Vec<String>,
+    r#type: u32,
+    value: String,
+}
+
+impl From<DatabaseTransaction> for TransactionResponse {
+    fn from(dt: DatabaseTransaction) -> Self {
+        TransactionResponse {
+            actions: Vec::new(),
+            base_fee_per_gas: dt
+                .base_fee_per_gas
+                .map_or(String::new(), |v| v.to_string()),
+            block: dt.block_number as u64,
+            confirmation_duration: Vec::new(),
+            confirmations: 0,
+            created_contract: dt.contract_created,
+            decode_input: Some(dt.input.clone()),
+            exchange_rate: String::new(),
+            fee: FeeType {
+                r#type: String::from("Standard"),
+                value: dt
+                    .effective_transaction_fee
+                    .map_or(String::new(), |v| v.to_string()),
+            },
+            from: TransAccountType {
+                ens_domain_name: String::new(),
+                hash: dt.from,
+                implementation_name: None,
+                is_contract: false,
+                is_verified: None,
+                metadata: None,
+                name: None,
+                private_tags: Vec::new(),
+                public_tags: Vec::new(),
+                watchlist_names: Vec::new(),
+            },
+            gas_limit: dt.gas.to_string(),
+            gas_price: dt
+                .gas_price
+                .map_or(String::new(), |v| v.to_string()),
+            gas_used: dt.gas_used.map_or(String::new(), |v| v.to_string()),
+            has_error_in_internal_txs: false,
+            hash: dt.hash,
+            max_fee_per_gas: dt
+                .max_fee_per_gas
+                .map_or(String::new(), |v| v.to_string()),
+            max_priority_fee_per_gas: dt
+                .max_priority_fee_per_gas
+                .map_or(String::new(), |v| v.to_string()),
+            method: Some(dt.method.clone()),
+            nonce: dt.nonce,
+            position: dt.transaction_index as u32,
+            priority_fee: None,
+            raw_input: dt.input,
+            result: "success".to_string(),
+            revert_reason: None,
+            status: match dt.status {
+                Some(TransactionStatus::Success) => String::from("ok"),
+                Some(TransactionStatus::Failure) => String::from("error"),
+                _ => String::from("Unknown"),
+            },
+            timestamp: Utc
+                .timestamp(dt.timestamp as i64, 0)
+                .format("%Y-%m-%dT%H:%M:%S%.fZ")
+                .to_string(),
+            to: TransAccountType {
+                ens_domain_name: String::new(),
+                hash: dt.to,
+                implementation_name: None,
+                is_contract: false,
+                is_verified: None,
+                metadata: None,
+                name: None,
+                private_tags: Vec::new(),
+                public_tags: Vec::new(),
+                watchlist_names: Vec::new(),
+            },
+            token_transfers: None,
+            token_transfers_overflow: None,
+            tx_burnt_fee: dt.burned.map_or(None, |v| Some(v.to_string())),
+            tx_tag: None,
+            tx_types: vec![
+                "coin_transfer".to_string(),
+                "contract_call".to_string(),
+                "token_transfer".to_string(),
+            ],
+            r#type: dt.transaction_type as u32,
+            value: dt.value.to_string(),
+        }
+    }
+}
+
 #[derive(Deserialize, Serialize)]
 pub struct NextPageParams {
     block_number: u64,
@@ -106,9 +255,23 @@ pub struct BlockResponseData {
     items: Vec<BlockResponse>,
     next_page_params: NextPageParams,
 }
+
+#[derive(Deserialize, Serialize)]
+pub struct TransactionResponseData {
+    items: Vec<TransactionResponse>,
+    next_page_params: NextPageParams,
+}
+
 #[derive(Deserialize)]
 pub struct GetBlockQuery {
     block_number: Option<u64>,
+    items_count: Option<u32>,
+}
+
+#[derive(Deserialize)]
+pub struct GetTransactionQuery {
+    hash: Option<String>,
+    index: Option<u32>,
     items_count: Option<u32>,
 }
 
@@ -251,7 +414,7 @@ pub async fn status() -> impl Responder {
 }
 
 // Handler Functions
-pub async fn handle_getblocks(
+pub async fn handle_get_blocks(
     query: web::Query<GetBlockQuery>,
 ) -> impl Responder {
     let skip_count = query.items_count.unwrap_or(0);
@@ -290,11 +453,99 @@ pub async fn handle_getblocks(
 }
 
 // Define a handler function that accepts a web::Path wrapping a tuple containing the ID
-pub async fn get_block_by_id(info: web::Path<(u64,)>) -> impl Responder {
-    let block_id = info.0;
-    format!("You requested information for block ID: {}", block_id)
+pub async fn handle_get_block_by_id(
+    query: web::Path<(u64,)>,
+) -> impl Responder {
+    let block_id = query.0;
+    info!("You requested information for block ID: {}", block_id.clone());
+    let config = Config::new();
+
+    let db = Database::new(
+        config.db_host.clone(),
+        config.db_username.clone(),
+        config.db_password.clone(),
+        config.db_name.clone(),
+        config.chain.clone(),
+    )
+    .await;
+
+    let database_block =
+        BlockResponse::from(db.get_block_by_id(block_id.clone()).await);
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .json(database_block)
 }
 
+pub async fn handle_get_transactions(
+    query: web::Query<GetTransactionQuery>,
+) -> impl Responder {
+    let skip_count = query.items_count.unwrap_or(0);
+
+    let config = Config::new();
+
+    let db = Database::new(
+        config.db_host.clone(),
+        config.db_username.clone(),
+        config.db_password.clone(),
+        config.db_name.clone(),
+        config.chain.clone(),
+    )
+    .await;
+
+    let database_transactions =
+        db.get_transactions(skip_count.clone()).await;
+    println!(
+        "-------- db_transactions -------- {:?}",
+        database_transactions
+    );
+    let transactions: Vec<TransactionResponse> = database_transactions
+        .into_iter()
+        .map(TransactionResponse::from)
+        .collect();
+
+    let block_number;
+    if let Some(last_block) = transactions.last() {
+        block_number = last_block.block;
+    } else {
+        block_number = 1;
+    }
+    let next_page = NextPageParams {
+        block_number: block_number - 1,
+        items_count: skip_count + transactions.len() as u32,
+    };
+
+    let rlt = TransactionResponseData {
+        items: transactions,
+        next_page_params: next_page,
+    };
+    // println!("{:?}", blocks);
+    HttpResponse::Ok().content_type("application/json").json(rlt)
+}
+
+// Define a handler function that accepts a web::Path wrapping a tuple containing the ID
+pub async fn handle_get_transaction_by_id(
+    query: web::Path<(String,)>,
+) -> impl Responder {
+    let hash = query.into_inner().0;
+    info!("You requested information for block ID: {}", hash.clone());
+    let config = Config::new();
+
+    let db = Database::new(
+        config.db_host.clone(),
+        config.db_username.clone(),
+        config.db_password.clone(),
+        config.db_name.clone(),
+        config.chain.clone(),
+    )
+    .await;
+
+    let database_transaction = TransactionResponse::from(
+        db.get_transaction_by_id(hash.clone()).await,
+    );
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .json(database_transaction)
+}
 pub async fn handle_eth_get_balance(
     query: web::Query<AccountQuery>,
 ) -> impl Responder {

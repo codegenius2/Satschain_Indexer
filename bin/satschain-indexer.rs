@@ -70,11 +70,19 @@ async fn main() -> std::io::Result<()> {
             .route("/status", web::get().to(explorer::status)) // GET request to "/status"
             .route(
                 "/api/v2/blocks",
-                web::get().to(explorer::handle_getblocks),
+                web::get().to(explorer::handle_get_blocks),
             )
             .route(
                 "/api/v2/blocks/{id}",
-                web::get().to(explorer::get_block_by_id),
+                web::get().to(explorer::handle_get_block_by_id),
+            )
+            .route(
+                "/api/v2/transactions",
+                web::get().to(explorer::handle_get_transactions),
+            )
+            .route(
+                "/api/v2/transactions/{id}",
+                web::get().to(explorer::handle_get_transaction_by_id),
             )
             .route(
                 "/api/eth_get_balance",
