@@ -23,6 +23,8 @@ async fn main() -> std::io::Result<()> {
 
     let explorer_server_port: String = env::var("EXPLORER_SERVER_PORT")
         .unwrap_or_else(|_| "8200".to_string());
+    let explorer_server_host: String = env::var("EXPLORER_SERVER_HOST")
+        .unwrap_or_else(|_| "0.0.0.0".to_string());
 
     let config = Config::new();
 
@@ -194,7 +196,7 @@ async fn main() -> std::io::Result<()> {
                 web::get().to(explorer::handle_get_status),
             )
     })
-    .bind(format!("localhost:{}", explorer_server_port))? // Bind server to localhost:8080
+    .bind(format!("{explorer_server_host}:{explorer_server_port}"))? // Bind server to localhost:8080
     .run();
     tokio::spawn(t);
 
