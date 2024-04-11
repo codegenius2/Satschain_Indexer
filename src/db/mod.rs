@@ -113,22 +113,10 @@ impl Database {
         blocks
     }
 
-    pub async fn get_blocks2(&self) -> Vec<String> {
-        let query = format!(
-            "SELECT uncles FROM blocks WHERE chain = {}",
-            self.chain.id
-        );
-
-        match self.db.query(&query).fetch_all::<String>().await {
-            Ok(tokens) => tokens,
-            Err(_) => Vec::new(),
-        }
-    }
-
     pub async fn get_blocks(&self, skip_count: u32) -> Vec<DatabaseBlock> {
         // Build SQL query string.
         let query = format!(
-            "SELECT * FROM blocks WHERE chain = {} AND is_uncle = false AND length(uncles) = 0 ORDER BY number DESC LIMIT 50 OFFSET {}",
+            "SELECT * FROM blocks WHERE chain = {} AND is_uncle = false ORDER BY number DESC LIMIT 50 OFFSET {}",
             self.chain.id, skip_count
         );
 
