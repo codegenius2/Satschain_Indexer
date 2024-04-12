@@ -8,22 +8,18 @@ use self::models::{
 };
 use crate::{
     chains::Chain,
-    explorer::{ChartTransactionResponse, StatsResponse},
+    explorer::models::{ChartTransactionResponse, InfoForAverageBlock},
 };
 use clickhouse::{Client, Row};
-use ethers::abi::token;
 use futures::future::join_all;
-use hyper_tls::HttpsConnector;
 use log::{error, info};
 use models::{
     block::DatabaseBlock, contract::DatabaseContract, log::DatabaseLog,
     trace::DatabaseTrace, transaction::DatabaseTransaction,
     withdrawal::DatabaseWithdrawal,
 };
-use serde::{Deserialize, Serialize};
-use serde_json::from_str;
-use serde_with::serde_as;
-use std::{collections::HashSet, time::Duration};
+use serde::Serialize;
+use std::collections::HashSet;
 
 pub struct BlockFetchedData {
     pub blocks: Vec<DatabaseBlock>,
@@ -37,11 +33,6 @@ pub struct BlockFetchedData {
     pub erc1155_transfers: Vec<DatabaseERC1155Transfer>,
     pub dex_trades: Vec<DatabaseDexTrade>,
 }
-
-// Ref: https://github.com/loyd/clickhouse.rs/blob/master/src/lib.rs#L51
-// ClickHouse uses 3s by default.
-// See https://github.com/ClickHouse/ClickHouse/blob/368cb74b4d222dc5472a7f2177f6bb154ebae07a/programs/server/config.xml#L201
-const POOL_IDLE_TIMEOUT: Duration = Duration::from_secs(2);
 
 #[derive(Clone)]
 pub struct Database {
@@ -78,30 +69,6 @@ impl DatabaseTables {
         }
     }
 }
-#[serde_as]
-#[derive(Debug, Clone, Row, Serialize, Deserialize)]
-pub struct InfoForAverageBlock {
-    pub start_timestamp: u32,
-    pub end_timestamp: u32,
-    pub start_number: u32,
-    pub end_number: u32,
-}
-
-impl Default for InfoForAverageBlock {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-impl InfoForAverageBlock {
-    pub fn new() -> Self {
-        Self {
-            start_timestamp: 0,
-            end_timestamp: 1,
-            start_number: 0,
-            end_number: 1,
-        }
-    }
-}
 
 impl Database {
     pub async fn new(
@@ -111,24 +78,6 @@ impl Database {
         db_name: String,
         chain: Chain,
     ) -> Self {
-        // let https = HttpsConnector::new();
-
-        // let client = hyper::Client::builder()
-        //     .pool_idle_timeout(POOL_IDLE_TIMEOUT)
-        //     .build::<_, hyper::Body>(https);
-
-        // let db = Client::with_http_client(client)
-        //     .with_url(db_host)
-        //     .with_user(db_username)
-        //     .with_password(db_password)
-        //     .with_database(db_name);
-        // let db = Client::default()
-        //     .with_url(
-        //         "https://vyhdu8a8kd.us-east1.gcp.clickhouse.cloud:8443",
-        //     )
-        //     .with_user("default")
-        //     .with_password("P~og~5_cVoY8E")
-        //     .with_database("satschain");
         let db = Client::default()
             .with_url(db_host)
             .with_user(db_username)
@@ -252,7 +201,7 @@ impl Database {
             Ok(token) => token,
             Err(e) => {
                 error!("Error fetching timestamp and number: {}", e);
-                return InfoForAverageBlock::new();
+                InfoForAverageBlock::new()
             }
         }
     }
