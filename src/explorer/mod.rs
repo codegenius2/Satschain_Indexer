@@ -6,8 +6,10 @@ use crate::db::models::transaction::{
 use crate::db::Database;
 use actix_web::{web, HttpResponse, Responder};
 use chrono::{DateTime, TimeZone, Utc};
+use clickhouse::Row;
 use log::info;
 use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
 // Common Structs for Account Module
 
 #[derive(Deserialize, Serialize, Clone)]
@@ -244,6 +246,103 @@ impl From<DatabaseTransaction> for TransactionResponse {
     }
 }
 
+#[derive(Debug, Clone, Row, Serialize, Deserialize)]
+pub struct GasPriceType {
+    base_fee: f64,
+    fiat_price: String,
+    price: f64,
+    priority_fee: f64,
+    priority_fee_wei: String,
+    time: f64,
+    wei: String,
+}
+
+#[derive(Debug, Clone, Row, Serialize, Deserialize)]
+pub struct GasPricesType {
+    average: GasPriceType,
+    fast: GasPriceType,
+    slow: GasPriceType,
+}
+#[serde_as]
+#[derive(Debug, Clone, Row, Serialize, Deserialize)]
+pub struct StatsResponse {
+    pub average_block_time: u32,
+    pub coin_image: String,
+    pub coin_price: String,
+    pub coin_price_change_percentage: f64,
+    pub gas_price_updated_at: String,
+    pub gas_prices: GasPricesType,
+    pub gas_prices_update_in: u32,
+    pub gas_used_today: String,
+    pub market_cap: String,
+    pub network_utilization_percentage: f64,
+    pub secondary_coin_price: Option<f64>,
+    pub static_gas_price: Option<f64>,
+    pub total_addresses: String,
+    pub total_blocks: String,
+    pub total_gas_used: String,
+    pub total_transactions: String,
+    pub transactions_today: String,
+    pub tvl: Option<u64>,
+}
+impl Default for StatsResponse {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+impl StatsResponse {
+    pub fn new() -> Self {
+        Self {
+            average_block_time: 0,
+            coin_image: "".to_string(),
+            coin_price: "".to_string(),
+            coin_price_change_percentage: 0.0,
+            gas_price_updated_at: "".to_string(),
+            gas_prices: GasPricesType {
+                average: GasPriceType {
+                    base_fee: 0.0,
+                    fiat_price: "".to_string(),
+                    price: 0.0,
+                    priority_fee: 0.0,
+                    priority_fee_wei: "".to_string(),
+                    time: 0.0,
+                    wei: "".to_string(),
+                },
+                fast: GasPriceType {
+                    base_fee: 0.0,
+                    fiat_price: "".to_string(),
+                    price: 0.0,
+                    priority_fee: 0.0,
+                    priority_fee_wei: "".to_string(),
+                    time: 0.0,
+                    wei: "".to_string(),
+                },
+                slow: GasPriceType {
+                    base_fee: 0.0,
+                    fiat_price: "".to_string(),
+                    price: 0.0,
+                    priority_fee: 0.0,
+                    priority_fee_wei: "".to_string(),
+                    time: 0.0,
+                    wei: "".to_string(),
+                },
+            },
+            gas_prices_update_in: 0,
+            gas_used_today: "".to_string(),
+            market_cap: "".to_string(),
+            network_utilization_percentage: 0.0,
+            secondary_coin_price: None,
+            static_gas_price: None,
+            total_addresses: "".to_string(),
+            total_blocks: "".to_string(),
+            total_gas_used: "".to_string(),
+            total_transactions: "".to_string(),
+            transactions_today: "".to_string(),
+            tvl: None,
+        }
+    }
+}
+
 #[derive(Deserialize, Serialize)]
 pub struct NextPageParams {
     block_number: u64,
@@ -274,6 +373,9 @@ pub struct GetTransactionQuery {
     index: Option<u32>,
     items_count: Option<u32>,
 }
+
+#[derive(Deserialize)]
+pub struct EmptyQuery {}
 
 #[derive(Deserialize)]
 pub struct AccountQuery {
@@ -417,6 +519,7 @@ pub async fn status() -> impl Responder {
 pub async fn handle_get_blocks(
     query: web::Query<GetBlockQuery>,
 ) -> impl Responder {
+    info!("Here");
     let skip_count = query.items_count.unwrap_or(0);
 
     let config = Config::new();
@@ -430,7 +533,7 @@ pub async fn handle_get_blocks(
     )
     .await;
 
-    let database_blocks = db.get_blocks(skip_count.clone()).await;
+    let database_blocks = db.get_blocks(skip_count, 50).await;
     println!("-------- db_blocks -------- {:?}", database_blocks);
     let blocks: Vec<BlockResponse> =
         database_blocks.into_iter().map(BlockResponse::from).collect();
@@ -492,8 +595,7 @@ pub async fn handle_get_transactions(
     )
     .await;
 
-    let database_transactions =
-        db.get_transactions(skip_count.clone()).await;
+    let database_transactions = db.get_transactions(skip_count, 50).await;
     println!(
         "-------- db_transactions -------- {:?}",
         database_transactions
@@ -547,6 +649,144 @@ pub async fn handle_get_transaction_by_id(
         .content_type("application/json")
         .json(database_transaction)
 }
+
+pub async fn handle_get_stats(
+    query: web::Query<EmptyQuery>,
+) -> impl Responder {
+    info!("-------------------- You are trying to get stats --------------------");
+    let config = Config::new();
+
+    let db = Database::new(
+        config.db_host.clone(),
+        config.db_username.clone(),
+        config.db_password.clone(),
+        config.db_name.clone(),
+        config.chain.clone(),
+    )
+    .await;
+
+    let mut stats_response = StatsResponse::new();
+    let info_for_average_block = db.get_info_for_average_block().await;
+    info!("****** average_block: {:?}", info_for_average_block);
+    stats_response.average_block_time =
+        ((info_for_average_block.end_timestamp
+            - info_for_average_block.start_timestamp) as u64
+            * 1000
+            / (info_for_average_block.end_number
+                - info_for_average_block.start_number)
+                as u64) as u32;
+
+    stats_response.coin_image = String::from("https://assets.coingecko.com/coins/images/279/small/ethereum.png?1696501628");
+    stats_response.coin_price = String::from("3504.49");
+    stats_response.coin_price_change_percentage = 0.85;
+    stats_response.gas_price_updated_at =
+        String::from("2024-04-11T19:07:36.078590Z");
+    stats_response.gas_prices = GasPricesType {
+        average: GasPriceType {
+            base_fee: 7.27,
+            fiat_price: "2.08".to_string(),
+            price: 8.29,
+            priority_fee: 1.02,
+            priority_fee_wei: "1018670328".to_string(),
+            time: 6190.575,
+            wei: "28280383240".to_string(),
+        },
+        fast: GasPriceType {
+            base_fee: 7.27,
+            fiat_price: "2.08".to_string(),
+            price: 8.29,
+            priority_fee: 1.02,
+            priority_fee_wei: "1018670328".to_string(),
+            time: 6190.575,
+            wei: "28280383240".to_string(),
+        },
+        slow: GasPriceType {
+            base_fee: 7.27,
+            fiat_price: "2.08".to_string(),
+            price: 8.29,
+            priority_fee: 1.02,
+            priority_fee_wei: "1018670328".to_string(),
+            time: 6190.575,
+            wei: "28280383240".to_string(),
+        },
+    };
+    stats_response.gas_prices_update_in = 29909;
+    stats_response.gas_used_today = String::from("108484462870");
+    stats_response.market_cap = String::from("420786039413.37880565");
+    stats_response.network_utilization_percentage = 53.92967968668905;
+    stats_response.secondary_coin_price = None;
+    stats_response.static_gas_price = None;
+    stats_response.total_addresses = "327784281".to_string();
+    stats_response.total_blocks =
+        info_for_average_block.end_number.to_string();
+    stats_response.total_gas_used = "0".to_string();
+    stats_response.total_transactions = "2331571580".to_string();
+    stats_response.transactions_today = "1207828".to_string();
+    stats_response.tvl = None;
+
+    info!(
+        "****** average_calcuation: {:?}",
+        (info_for_average_block.end_timestamp
+            - info_for_average_block.start_timestamp)
+            / (info_for_average_block.end_number
+                - info_for_average_block.start_number)
+    );
+
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .json(stats_response)
+}
+
+pub async fn handle_main_page_blocks(
+    query: web::Query<EmptyQuery>,
+) -> impl Responder {
+    let config = Config::new();
+
+    info!(" ((((((((((( We are here!!! )))))))))))");
+    let db = Database::new(
+        config.db_host.clone(),
+        config.db_username.clone(),
+        config.db_password.clone(),
+        config.db_name.clone(),
+        config.chain.clone(),
+    )
+    .await;
+
+    let database_blocks = db.get_blocks(0, 6).await;
+    info!("-------- main_page db_blocks -------- {:?}", database_blocks);
+    let blocks: Vec<BlockResponse> =
+        database_blocks.into_iter().map(BlockResponse::from).collect();
+
+    HttpResponse::Ok().content_type("application/json").json(blocks)
+}
+
+pub async fn handle_main_page_transactions(
+    query: web::Query<EmptyQuery>,
+) -> impl Responder {
+    let config = Config::new();
+
+    let db = Database::new(
+        config.db_host.clone(),
+        config.db_username.clone(),
+        config.db_password.clone(),
+        config.db_name.clone(),
+        config.chain.clone(),
+    )
+    .await;
+
+    let database_transactions = db.get_transactions(0, 6).await;
+    let transactions: Vec<TransactionResponse> = database_transactions
+        .into_iter()
+        .map(TransactionResponse::from)
+        .collect();
+    info!(
+        "-------- main_page_db_transactions -------- {:?}",
+        transactions
+    );
+
+    HttpResponse::Ok().content_type("application/json").json(transactions)
+}
+
 pub async fn handle_eth_get_balance(
     query: web::Query<AccountQuery>,
 ) -> impl Responder {
