@@ -6,8 +6,9 @@ use self::models::{
     erc20_transfer::DatabaseERC20Transfer,
     erc721_transfer::DatabaseERC721Transfer,
 };
-use crate::chains::Chain;
+use crate::{chains::Chain, explorer::StatsResponse};
 use clickhouse::{Client, Row};
+use ethers::abi::token;
 use futures::future::join_all;
 use hyper_tls::HttpsConnector;
 use log::{error, info};
@@ -16,8 +17,9 @@ use models::{
     trace::DatabaseTrace, transaction::DatabaseTransaction,
     withdrawal::DatabaseWithdrawal,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::from_str;
+use serde_with::serde_as;
 use std::{collections::HashSet, time::Duration};
 
 pub struct BlockFetchedData {
@@ -70,6 +72,30 @@ impl DatabaseTables {
             DatabaseTables::Erc721Transfers => "erc721_transfers",
             DatabaseTables::Erc1155Transfers => "erc1155_transfers",
             DatabaseTables::DexTrades => "dex_trades",
+        }
+    }
+}
+#[serde_as]
+#[derive(Debug, Clone, Row, Serialize, Deserialize)]
+pub struct InfoForAverageBlock {
+    pub start_timestamp: u32,
+    pub end_timestamp: u32,
+    pub start_number: u32,
+    pub end_number: u32,
+}
+
+impl Default for InfoForAverageBlock {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+impl InfoForAverageBlock {
+    pub fn new() -> Self {
+        Self {
+            start_timestamp: 0,
+            end_timestamp: 1,
+            start_number: 0,
+            end_number: 1,
         }
     }
 }
@@ -205,6 +231,20 @@ impl Database {
             Err(e) => {
                 error!("Error fetching block by id: {}", e);
                 DatabaseTransaction::new()
+            }
+        }
+    }
+
+    pub async fn get_info_for_average_block(&self) -> InfoForAverageBlock {
+        let query = format!(
+            "SELECT Min(timestamp) as start_time, Max(timestamp) as end_time, Min(number) as start_number, Max(number) as end_number FROM blocks WHERE number IN (SELECT number FROM blocks WHERE chain = {} ORDER BY number DESC LIMIT 50)",
+            self.chain.id
+        );
+        match self.db.query(&query).fetch_one().await {
+            Ok(token) => token,
+            Err(e) => {
+                error!("Error fetching timestamp and number: {}", e);
+                return InfoForAverageBlock::new();
             }
         }
     }

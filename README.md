@@ -96,7 +96,7 @@ DB_USER_PASSWORD=your_clickhouse_password       # mysecretkey
 DB_PORT=your_clickhouse_server_port             # 8123
 DB_NAME=satschain                               # if you change this to another name, you need to change dbname of queries in create_tables.sql file so that the db name is equal with your DB_NAME
 DB_HOST=your_clickhouse_server_host             # http://localhost
-EXPLORER_SERVER_PORT=8300                       # server port for explore frontend, it must be same as frontend's NEXT_PUBLIC_API_PORT
+EXPLORER_SERVER_PORT=8200                       # server port for explore frontend, it must be same as frontend's NEXT_PUBLIC_API_PORT
 ```
 
 
