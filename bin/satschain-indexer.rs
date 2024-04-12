@@ -45,22 +45,22 @@ async fn main() -> std::io::Result<()> {
     )
     .await;
 
-    // if config.ws_url.is_some() && config.end_block == 0
-    //     || config.end_block == -1
-    // {
-    //     tokio::spawn({
-    //         let rpc: Rpc = rpc.clone();
-    //         let db: Database = db.clone();
+    if config.ws_url.is_some() && config.end_block == 0
+        || config.end_block == -1
+    {
+        tokio::spawn({
+            let rpc: Rpc = rpc.clone();
+            let db: Database = db.clone();
 
-    //         async move {
-    //             loop {
-    //                 rpc.listen_blocks(&db).await;
+            async move {
+                loop {
+                    rpc.listen_blocks(&db).await;
 
-    //                 sleep(Duration::from_millis(500)).await;
-    //             }
-    //         }
-    //     });
-    // }
+                    sleep(Duration::from_millis(500)).await;
+                }
+            }
+        });
+    }
 
     let t = HttpServer::new(|| {
         let cors = Cors::permissive();
@@ -97,6 +97,11 @@ async fn main() -> std::io::Result<()> {
             .route(
                 "/api/v2/main-page/transactions",
                 web::get().to(explorer::handle_main_page_transactions),
+            )
+            .route(
+                "/api/v2/stats/charts/transactions",
+                web::get()
+                    .to(explorer::handle_get_stats_charts_transactions),
             )
             .route(
                 "/api/eth_get_balance",
