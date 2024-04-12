@@ -89,6 +89,14 @@ async fn main() -> std::io::Result<()> {
                 web::get().to(explorer::handle_get_stats),
             )
             .route(
+                "/api/v2/main-page/blocks",
+                web::get().to(explorer::handle_main_page_blocks),
+            )
+            .route(
+                "/api/v2/main-page/transactions",
+                web::get().to(explorer::handle_main_page_transactions),
+            )
+            .route(
                 "/api/eth_get_balance",
                 web::get().to(explorer::handle_eth_get_balance),
             )

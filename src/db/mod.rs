@@ -151,11 +151,15 @@ impl Database {
         blocks
     }
 
-    pub async fn get_blocks(&self, skip_count: u32) -> Vec<DatabaseBlock> {
+    pub async fn get_blocks(
+        &self,
+        skip_count: u32,
+        limit: u32,
+    ) -> Vec<DatabaseBlock> {
         // Build SQL query string.
         let query = format!(
-            "SELECT * FROM blocks WHERE chain = {} AND is_uncle = false ORDER BY number DESC LIMIT 50 OFFSET {}",
-            self.chain.id, skip_count
+            "SELECT * FROM blocks WHERE chain = {} AND is_uncle = false ORDER BY number DESC LIMIT {} OFFSET {}",
+            self.chain.id, limit, skip_count
         );
 
         // Log the query string for debugging purposes.
@@ -189,11 +193,12 @@ impl Database {
     pub async fn get_transactions(
         &self,
         skip_count: u32,
+        limit: u32,
     ) -> Vec<DatabaseTransaction> {
         // Build SQL query string.
         let query = format!(
-            "SELECT * FROM transactions WHERE chain = {} ORDER BY timestamp DESC LIMIT 50 OFFSET {}",
-            self.chain.id, skip_count
+            "SELECT * FROM transactions WHERE chain = {} ORDER BY timestamp DESC LIMIT {} OFFSET {}",
+            self.chain.id, limit, skip_count
         );
 
         // Log the query string for debugging purposes.

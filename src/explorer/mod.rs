@@ -533,7 +533,7 @@ pub async fn handle_get_blocks(
     )
     .await;
 
-    let database_blocks = db.get_blocks(skip_count).await;
+    let database_blocks = db.get_blocks(skip_count, 50).await;
     println!("-------- db_blocks -------- {:?}", database_blocks);
     let blocks: Vec<BlockResponse> =
         database_blocks.into_iter().map(BlockResponse::from).collect();
@@ -595,8 +595,7 @@ pub async fn handle_get_transactions(
     )
     .await;
 
-    let database_transactions =
-        db.get_transactions(skip_count.clone()).await;
+    let database_transactions = db.get_transactions(skip_count, 50).await;
     println!(
         "-------- db_transactions -------- {:?}",
         database_transactions
@@ -668,12 +667,14 @@ pub async fn handle_get_stats(
 
     let mut stats_response = StatsResponse::new();
     let info_for_average_block = db.get_info_for_average_block().await;
-
-    stats_response.average_block_time = (info_for_average_block
-        .end_timestamp
-        - info_for_average_block.start_timestamp)
-        / (info_for_average_block.end_number
-            - info_for_average_block.start_number);
+    info!("****** average_block: {:?}", info_for_average_block);
+    stats_response.average_block_time =
+        ((info_for_average_block.end_timestamp
+            - info_for_average_block.start_timestamp) as u64
+            * 1000
+            / (info_for_average_block.end_number
+                - info_for_average_block.start_number)
+                as u64) as u32;
 
     stats_response.coin_image = String::from("https://assets.coingecko.com/coins/images/279/small/ethereum.png?1696501628");
     stats_response.coin_price = String::from("3504.49");
@@ -716,15 +717,74 @@ pub async fn handle_get_stats(
     stats_response.secondary_coin_price = None;
     stats_response.static_gas_price = None;
     stats_response.total_addresses = "327784281".to_string();
-    stats_response.total_blocks = "19633901".to_string();
+    stats_response.total_blocks =
+        info_for_average_block.end_number.to_string();
     stats_response.total_gas_used = "0".to_string();
     stats_response.total_transactions = "2331571580".to_string();
     stats_response.transactions_today = "1207828".to_string();
     stats_response.tvl = None;
 
+    info!(
+        "****** average_calcuation: {:?}",
+        (info_for_average_block.end_timestamp
+            - info_for_average_block.start_timestamp)
+            / (info_for_average_block.end_number
+                - info_for_average_block.start_number)
+    );
+
     HttpResponse::Ok()
         .content_type("application/json")
         .json(stats_response)
+}
+
+pub async fn handle_main_page_blocks(
+    query: web::Query<EmptyQuery>,
+) -> impl Responder {
+    let config = Config::new();
+
+    info!(" ((((((((((( We are here!!! )))))))))))");
+    let db = Database::new(
+        config.db_host.clone(),
+        config.db_username.clone(),
+        config.db_password.clone(),
+        config.db_name.clone(),
+        config.chain.clone(),
+    )
+    .await;
+
+    let database_blocks = db.get_blocks(0, 6).await;
+    info!("-------- main_page db_blocks -------- {:?}", database_blocks);
+    let blocks: Vec<BlockResponse> =
+        database_blocks.into_iter().map(BlockResponse::from).collect();
+
+    HttpResponse::Ok().content_type("application/json").json(blocks)
+}
+
+pub async fn handle_main_page_transactions(
+    query: web::Query<EmptyQuery>,
+) -> impl Responder {
+    let config = Config::new();
+
+    let db = Database::new(
+        config.db_host.clone(),
+        config.db_username.clone(),
+        config.db_password.clone(),
+        config.db_name.clone(),
+        config.chain.clone(),
+    )
+    .await;
+
+    let database_transactions = db.get_transactions(0, 6).await;
+    let transactions: Vec<TransactionResponse> = database_transactions
+        .into_iter()
+        .map(TransactionResponse::from)
+        .collect();
+    info!(
+        "-------- main_page_db_transactions -------- {:?}",
+        transactions
+    );
+
+    HttpResponse::Ok().content_type("application/json").json(transactions)
 }
 
 pub async fn handle_eth_get_balance(
