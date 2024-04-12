@@ -361,6 +361,18 @@ pub struct TransactionResponseData {
     next_page_params: NextPageParams,
 }
 
+#[serde_as]
+#[derive(Debug, Clone, Row, Serialize, Deserialize)]
+pub struct ChartTransactionResponse {
+    date: String,
+    tx_count: u32,
+}
+
+#[serde_as]
+#[derive(Debug, Clone, Row, Serialize, Deserialize)]
+pub struct ChartTransactionResponseData {
+    chart_data: Vec<ChartTransactionResponse>,
+}
 #[derive(Deserialize)]
 pub struct GetBlockQuery {
     block_number: Option<u64>,
@@ -785,6 +797,32 @@ pub async fn handle_main_page_transactions(
     );
 
     HttpResponse::Ok().content_type("application/json").json(transactions)
+}
+
+pub async fn handle_get_stats_charts_transactions(
+    query: web::Query<EmptyQuery>,
+) -> impl Responder {
+    info!("-------------------- You are trying to get stats charts transactions --------------------");
+    let config = Config::new();
+
+    let db = Database::new(
+        config.db_host.clone(),
+        config.db_username.clone(),
+        config.db_password.clone(),
+        config.db_name.clone(),
+        config.chain.clone(),
+    )
+    .await;
+
+    let chart_transaction = db.get_chart_transaction_data().await;
+    let chart_transaction_data =
+        ChartTransactionResponseData { chart_data: chart_transaction };
+
+    info!("****** chart_transaction_data: {:?}", chart_transaction_data);
+
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .json(chart_transaction_data)
 }
 
 pub async fn handle_eth_get_balance(

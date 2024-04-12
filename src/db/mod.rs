@@ -6,7 +6,10 @@ use self::models::{
     erc20_transfer::DatabaseERC20Transfer,
     erc721_transfer::DatabaseERC721Transfer,
 };
-use crate::{chains::Chain, explorer::StatsResponse};
+use crate::{
+    chains::Chain,
+    explorer::{ChartTransactionResponse, StatsResponse},
+};
 use clickhouse::{Client, Row};
 use ethers::abi::token;
 use futures::future::join_all;
@@ -250,6 +253,29 @@ impl Database {
             Err(e) => {
                 error!("Error fetching timestamp and number: {}", e);
                 return InfoForAverageBlock::new();
+            }
+        }
+    }
+
+    pub async fn get_chart_transaction_data(
+        &self,
+    ) -> Vec<ChartTransactionResponse> {
+        info!("We are senior");
+        let query = format!(
+            "SELECT toString(DATE(timestamp)) as tx_date, toUInt32(COUNT(DATE(timestamp))) as tx_count FROM transactions WHERE chain = {} GROUP BY DATE(timestamp) ORDER BY DATE(timestamp) DESC LIMIT 30",
+            self.chain.id
+        );
+
+        match self
+            .db
+            .query(&query)
+            .fetch_all::<ChartTransactionResponse>()
+            .await
+        {
+            Ok(token) => token,
+            Err(e) => {
+                error!("Error fetching timestamp and number: {}", e);
+                Vec::new()
             }
         }
     }
