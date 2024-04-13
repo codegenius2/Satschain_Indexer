@@ -932,105 +932,87 @@ impl Rpc {
 }
 
 pub async fn sync_chain(rpc: &Rpc, db: &Database, config: &Config) {
-    info!("here");
-    let mut indexed_blocks = db.get_indexed_blocks().await;
+    info!("sync chain");
 
-    // If there are no indexed blocks, insert the genesis transactions
-    if indexed_blocks.is_empty() {
-        let genesis_transactions =
-            get_genesis_allocations(config.chain.clone());
-        db.store_items(
-            &genesis_transactions,
-            DatabaseTables::Transactions.as_str(),
-        )
-        .await;
-    }
-
-    let last_block = if config.end_block != 0 {
-        config.end_block as u32
-    } else {
-        rpc.get_last_block().await
-    };
-
-    let full_block_range: Vec<u32> =
-        (config.start_block..last_block).collect();
-
-    let missing_blocks: Vec<&u32> = full_block_range
-        .iter()
-        .filter(|block| !indexed_blocks.contains(block))
-        .collect();
-
-    let total_missing_blocks = missing_blocks.len();
-
-    // If the program uses a block range and finishes shutdown gracefully
-    if config.end_block != 0 && total_missing_blocks == 0 {
-        std::process::exit(0);
-    }
-
-    let missing_blocks_chunks = missing_blocks.chunks(config.batch_size);
-
-    for missing_blocks_chunk in missing_blocks_chunks {
-        let mut work = vec![];
-
-        for block_number in missing_blocks_chunk {
-            work.push(rpc.fetch_block(block_number, &config.chain))
-        }
-
-        let results = join_all(work).await;
-
-        let mut fetched_data = BlockFetchedData {
-            blocks: Vec::new(),
-            contracts: Vec::new(),
-            logs: Vec::new(),
-            traces: Vec::new(),
-            transactions: Vec::new(),
-            withdrawals: Vec::new(),
-            erc20_transfers: Vec::new(),
-            erc721_transfers: Vec::new(),
-            erc1155_transfers: Vec::new(),
-            dex_trades: Vec::new(),
-        };
-
-        for result in results {
-            match result {
-                Some((
-                    mut blocks,
-                    mut transactions,
-                    mut logs,
-                    mut contracts,
-                    mut traces,
-                    mut withdrawals,
-                    mut erc20_transfers,
-                    mut erc721_transfers,
-                    mut erc1155_transfers,
-                    mut dex_trades,
-                )) => {
-                    fetched_data.blocks.append(&mut blocks);
-                    fetched_data.transactions.append(&mut transactions);
-                    fetched_data.logs.append(&mut logs);
-                    fetched_data.contracts.append(&mut contracts);
-                    fetched_data.traces.append(&mut traces);
-                    fetched_data.withdrawals.append(&mut withdrawals);
-                    fetched_data
-                        .erc20_transfers
-                        .append(&mut erc20_transfers);
-                    fetched_data
-                        .erc721_transfers
-                        .append(&mut erc721_transfers);
-                    fetched_data
-                        .erc1155_transfers
-                        .append(&mut erc1155_transfers);
-                    fetched_data.dex_trades.append(&mut dex_trades);
-                }
-                None => continue,
+    let mut missing_blocks: Vec<u32> = vec![];
+    let mut start_block = 0u32;
+    let mut end_block = rpc.get_last_block().await;
+    loop {
+        let last_block = rpc.get_last_block().await;
+        while end_block < last_block {
+            start_block = end_block;
+            end_block = start_block + config.batch_size as u32
+                - missing_blocks.clone().len() as u32;
+            if end_block > last_block {
+                end_block = last_block;
             }
-        }
+            let mut work = vec![];
+            for block_num in missing_blocks.into_iter() {
+                work.push(
+                    rpc.fetch_block(&block_num.clone(), &config.chain),
+                )
+            }
 
-        db.store_data(&fetched_data).await;
+            let results = join_all(work);
+            missing_blocks.clear();
 
-        for block in fetched_data.blocks.iter() {
-            info!("block_number {}", block.clone().number);
-            indexed_blocks.insert(block.number);
+            let mut fetched_data = BlockFetchedData {
+                blocks: Vec::new(),
+                contracts: Vec::new(),
+                logs: Vec::new(),
+                traces: Vec::new(),
+                transactions: Vec::new(),
+                withdrawals: Vec::new(),
+                erc20_transfers: Vec::new(),
+                erc721_transfers: Vec::new(),
+                erc1155_transfers: Vec::new(),
+                dex_trades: Vec::new(),
+            };
+
+            let mut index = 0;
+            for result in results {
+                match result {
+                    Some((
+                        mut blocks,
+                        mut transactions,
+                        mut logs,
+                        mut contracts,
+                        mut traces,
+                        mut withdrawals,
+                        mut erc20_transfers,
+                        mut erc721_transfers,
+                        mut erc1155_transfers,
+                        mut dex_trades,
+                    )) => {
+                        fetched_data.blocks.append(&mut blocks);
+                        fetched_data
+                            .transactions
+                            .append(&mut transactions);
+                        fetched_data.logs.append(&mut logs);
+                        fetched_data.contracts.append(&mut contracts);
+                        fetched_data.traces.append(&mut traces);
+                        fetched_data.withdrawals.append(&mut withdrawals);
+                        fetched_data
+                            .erc20_transfers
+                            .append(&mut erc20_transfers);
+                        fetched_data
+                            .erc721_transfers
+                            .append(&mut erc721_transfers);
+                        fetched_data
+                            .erc1155_transfers
+                            .append(&mut erc1155_transfers);
+                        fetched_data.dex_trades.append(&mut dex_trades);
+                    }
+                    None => missing_blocks.push(index),
+                }
+                index += 1;
+            }
+
+            db.store_data(&fetched_data).await;
+
+            for block in fetched_data.blocks.iter() {
+                info!("block_number {}", block.clone().number);
+            }
         }
     }
 }
