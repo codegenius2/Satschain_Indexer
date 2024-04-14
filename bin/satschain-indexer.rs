@@ -74,10 +74,8 @@ async fn main() -> std::io::Result<()> {
     tokio::spawn(t);
 
     // sync chain
-    loop {
-        if !config.new_blocks_only {
-            sync_chain(&rpc, &db, &config).await;
-        }
-        sleep(Duration::from_secs(100)).await;
+    if !config.new_blocks_only {
+        sync_chain(&rpc, &db, &config).await;
     }
+    Ok(())
 }

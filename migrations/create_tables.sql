@@ -226,3 +226,13 @@ ENGINE = ReplacingMergeTree()
 PARTITION BY toYYYYMM(timestamp)
 ORDER BY (address, block_number, chain, timestamp, validator_index)
 SETTINGS index_granularity = 8192;
+
+CREATE TABLE satschain.infoforsync (
+  end_block UInt32,
+  missing_blocks Array(UInt32),
+  timestamp DateTime,
+)
+ENGINE = ReplacingMergeTree()
+PARTITION BY toYYYYMM(timestamp)
+ORDER BY (timestamp)
+SETTINGS index_granularity = 8192;

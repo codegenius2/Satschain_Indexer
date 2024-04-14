@@ -14,7 +14,8 @@ use clickhouse::{Client, Row};
 use futures::future::join_all;
 use log::{error, info};
 use models::{
-    block::DatabaseBlock, contract::DatabaseContract, log::DatabaseLog,
+    block::DatabaseBlock, contract::DatabaseContract,
+    infoforsync::DatabaseInfoForSync, log::DatabaseLog,
     trace::DatabaseTrace, transaction::DatabaseTransaction,
     withdrawal::DatabaseWithdrawal,
 };
@@ -51,6 +52,7 @@ pub enum DatabaseTables {
     Erc721Transfers,
     Erc1155Transfers,
     DexTrades,
+    InfoForSync,
 }
 
 impl DatabaseTables {
@@ -66,6 +68,7 @@ impl DatabaseTables {
             DatabaseTables::Erc721Transfers => "erc721_transfers",
             DatabaseTables::Erc1155Transfers => "erc1155_transfers",
             DatabaseTables::DexTrades => "dex_trades",
+            DatabaseTables::InfoForSync => "infoforsync",
         }
     }
 }
@@ -209,7 +212,7 @@ impl Database {
     pub async fn get_chart_transaction_data(
         &self,
     ) -> Vec<ChartTransactionResponse> {
-        info!("We are senior");
+        info!("get chart transaction data");
         let query = format!(
             "SELECT toString(DATE(timestamp)) as tx_date, toUInt32(COUNT(DATE(timestamp))) as tx_count FROM transactions WHERE chain = {} GROUP BY DATE(timestamp) ORDER BY DATE(timestamp) DESC LIMIT 30",
             self.chain.id
@@ -219,6 +222,26 @@ impl Database {
             .db
             .query(&query)
             .fetch_all::<ChartTransactionResponse>()
+            .await
+        {
+            Ok(token) => token,
+            Err(e) => {
+                error!("Error fetching timestamp and number: {}", e);
+                Vec::new()
+            }
+        }
+    }
+
+    pub async fn get_info_for_sync(&self) -> Vec<DatabaseInfoForSync> {
+        info!("get info for sync");
+        let query =
+            "SELECT * FROM infoforsync ORDER BY timestamp DESC LIMIT 2"
+                .to_string();
+
+        match self
+            .db
+            .query(&query)
+            .fetch_all::<DatabaseInfoForSync>()
             .await
         {
             Ok(token) => token,

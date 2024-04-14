@@ -9,6 +9,7 @@ use crate::{
             erc1155_transfer::DatabaseERC1155Transfer,
             erc20_transfer::DatabaseERC20Transfer,
             erc721_transfer::DatabaseERC721Transfer,
+            infoforsync::DatabaseInfoForSync,
             log::DatabaseLog,
             trace::{DatabaseTrace, TraceType},
             transaction::DatabaseTransaction,
@@ -27,6 +28,7 @@ use crate::{
         format::{decode_bytes, format_hash},
     },
 };
+use chrono::Utc;
 use ethabi::ParamType;
 use ethers::{
     abi::ethabi,
@@ -934,27 +936,57 @@ impl Rpc {
 pub async fn sync_chain(rpc: &Rpc, db: &Database, config: &Config) {
     info!("sync chain");
 
+    // load initial info for starting synchronizing data
+    let info_for_sync = db.get_info_for_sync().await;
     let mut missing_blocks: Vec<u32> = vec![];
-    let mut start_block = 0u32;
-    let mut end_block = rpc.get_last_block().await;
+    let mut start_block;
+    let mut end_block = 0;
+    if info_for_sync.len() as u32 == 0 {
+        // If there are no indexed blocks, insert the genesis transactions
+        let genesis_transactions =
+            get_genesis_allocations(config.chain.clone());
+        db.store_items(
+            &genesis_transactions,
+            DatabaseTables::Transactions.as_str(),
+        )
+        .await;
+    }
+    if info_for_sync.len() as u32 != 0 {
+        missing_blocks = info_for_sync[0].missing_blocks.clone();
+        end_block = info_for_sync[0].end_block;
+    }
+
     loop {
+        // get the last block number from the chain
         let last_block = rpc.get_last_block().await;
+        info!("{}", last_block.clone());
+
         while end_block < last_block {
             start_block = end_block;
             end_block = start_block + config.batch_size as u32
-                - missing_blocks.clone().len() as u32;
+                - missing_blocks.len() as u32;
             if end_block > last_block {
                 end_block = last_block;
             }
+            info!("new importing: {} - {}", start_block, end_block);
+
             let mut work = vec![];
-            for block_num in missing_blocks.into_iter() {
+            let mut tmp_list = vec![];
+            for i in start_block..end_block {
+                missing_blocks.push(i);
+            }
+            for i in 0..missing_blocks.len() {
                 work.push(
-                    rpc.fetch_block(&block_num.clone(), &config.chain),
-                )
+                    rpc.fetch_block(&missing_blocks[i], &config.chain),
+                );
             }
 
-            let results = join_all(work);
-            missing_blocks.clear();
+            // let test_block_number = start_block.clone();
+            // let test =
+            //     rpc.fetch_block(&test_block_number, &config.chain).await;
+            // info!("test result: {:?}", test);
+
+            let results = join_all(work).await;
 
             let mut fetched_data = BlockFetchedData {
                 blocks: Vec::new(),
@@ -969,8 +1001,8 @@ pub async fn sync_chain(rpc: &Rpc, db: &Database, config: &Config) {
                 dex_trades: Vec::new(),
             };
 
-            let mut index = 0;
-            for result in results {
+            info!("{:?}", results);
+            for (index, result) in results.into_iter().enumerate() {
                 match result {
                     Some((
                         mut blocks,
@@ -1003,9 +1035,8 @@ pub async fn sync_chain(rpc: &Rpc, db: &Database, config: &Config) {
                             .append(&mut erc1155_transfers);
                         fetched_data.dex_trades.append(&mut dex_trades);
                     }
-                    None => missing_blocks.push(index),
+                    None => tmp_list.push(missing_blocks[index]),
                 }
-                index += 1;
             }
 
             db.store_data(&fetched_data).await;
@@ -1013,6 +1044,23 @@ pub async fn sync_chain(rpc: &Rpc, db: &Database, config: &Config) {
             for block in fetched_data.blocks.iter() {
                 info!("block_number {}", block.clone().number);
             }
+
+            missing_blocks.clear();
+            for tmp in tmp_list {
+                missing_blocks.push(tmp);
+            }
+
+            info!("missing blocks: {:?}", missing_blocks);
+            let info_for_sync = DatabaseInfoForSync {
+                end_block,
+                missing_blocks: missing_blocks.clone(),
+                timestamp: Utc::now().timestamp() as u32,
+            };
+
+            let lists = vec![info_for_sync];
+
+            db.store_items(&lists, DatabaseTables::InfoForSync.as_str())
+                .await;
         }
     }
 }
