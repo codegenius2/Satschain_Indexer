@@ -18,6 +18,10 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                 "/api/v2/transactions/{id}",
                 web::get().to(handle_get_transaction_by_id),
             )
+            .route(
+                "/api/v2/transactions/{id}/summary",
+                web::get().to(handle_get_transaction_summary_for_id),
+            )
             .route("/api/v2/stats", web::get().to(handle_get_stats))
             .route(
                 "/api/v2/main-page/blocks",
@@ -26,6 +30,10 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
             .route(
                 "/api/v2/main-page/transactions",
                 web::get().to(handle_main_page_transactions),
+            )
+            .route(
+                "/api/v2/main-page/indexing-status",
+                web::get().to(handle_get_indexing_status),
             )
             .route(
                 "/api/v2/stats/charts/transactions",

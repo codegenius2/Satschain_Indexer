@@ -398,8 +398,39 @@ pub struct ChartTransactionResponse {
 pub struct ChartTransactionResponseData {
     pub chart_data: Vec<ChartTransactionResponse>,
 }
-#[derive(Deserialize)]
 
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct SummaryTemplate {
+    approved: Option<u32>,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct TransactionDebugData {
+    pub is_prompt_truncated: bool,
+    pub model_classification_type: String,
+    pub post_llm_classification_type: String,
+    pub summary_template: SummaryTemplate,
+    pub transaction_hash: String,
+}
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct TransactionSummaryResponse {
+    pub debug_data: TransactionDebugData,
+    pub summaries: Vec<u32>,
+}
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct TransactionSummaryResponseData {
+    pub data: TransactionSummaryResponse,
+    pub success: bool,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct IndexingStatusResponse {
+    pub finished_indexing: bool,
+    pub finished_indexing_blocks: bool,
+    pub indexed_blocks_ratio: String,
+    pub indexed_internal_transactions_ratio: String,
+}
+#[derive(Deserialize)]
 pub struct GetBlockQuery {
     pub block_number: Option<u64>,
     pub items_count: Option<u32>,

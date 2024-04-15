@@ -47,6 +47,7 @@ async fn main() -> std::io::Result<()> {
     if config.ws_url.is_some() && config.end_block == 0
         || config.end_block == -1
     {
+        info!("------ here is get new block parts ------");
         tokio::spawn({
             let rpc: Rpc = rpc.clone();
             let db: Database = db.clone();
@@ -73,10 +74,8 @@ async fn main() -> std::io::Result<()> {
     tokio::spawn(t);
 
     // sync chain
-    loop {
-        if !config.new_blocks_only {
-            sync_chain(&rpc, &db, &config).await;
-        }
-        sleep(Duration::from_secs(30)).await;
+    if !config.new_blocks_only {
+        sync_chain(&rpc, &db, &config).await;
     }
+    Ok(())
 }
