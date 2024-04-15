@@ -145,6 +145,36 @@ pub async fn handle_get_transaction_by_id(
         .json(database_transaction)
 }
 
+pub async fn handle_get_transaction_summary_for_id(
+    query: web::Path<(String,)>,
+) -> impl Responder {
+    let hash = query.into_inner().0;
+    // let x: TransactionSummaryResponseData{
+    //     data: TransactionSummaryResponse{
+    //         debug_data: TransactionDebugData{
+    //             is_prompt_truncated: false,
+    //             model_classification_type: "approved".to_string(),
+    //             post_llm_classification_type: "approved".to_string(),
+    //             summary_template: {},
+    //             transaction_hash: hash  ,
+    //         },
+    //         summaries: vec![],
+    //     },
+    //     success: true
+    // };
+    HttpResponse::Ok().content_type("application/json").json(hash)
+}
+pub async fn handle_get_indexing_status(
+    query: web::Query<EmptyQuery>,
+) -> impl Responder {
+    let x = IndexingStatusResponse {
+        finished_indexing: true,
+        finished_indexing_blocks: true,
+        indexed_blocks_ratio: "1.00".to_string(),
+        indexed_internal_transactions_ratio: "1.00".to_string(),
+    };
+    HttpResponse::Ok().content_type("application/json").json(x)
+}
 pub async fn handle_get_stats(
     query: web::Query<EmptyQuery>,
 ) -> impl Responder {
